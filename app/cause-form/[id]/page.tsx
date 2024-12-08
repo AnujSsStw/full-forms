@@ -1,3 +1,5 @@
+import { RiversideCountySheriffForm } from "./CauseForm";
+
 export default function BookingFormPage({
   params,
 }: {
@@ -5,7 +7,9 @@ export default function BookingFormPage({
     id: string;
   };
 }) {
-  console.log(params.id);
-
-  return <main>cause</main>;
+  return (
+    <main>
+      <RiversideCountySheriffForm id={params.id} />
+    </main>
+  );
 }

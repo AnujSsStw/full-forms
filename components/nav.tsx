@@ -39,13 +39,12 @@ export function Navigation({}: {}) {
               sideOffset={8}
               className="fixed -right-4 min-w-56 bg-card p-2"
             >
-              <DropdownMenuItem
-                className="group h-9 w-full cursor-pointer justify-between rounded-md px-2"
-                // onClick={() => navigate({ to: SettingsRoute.fullPath })}
-              >
-                <span className="text-sm text-primary/60 group-hover:text-primary group-focus:text-primary">
-                  Settings
-                </span>
+              <DropdownMenuItem className="group h-9 w-full cursor-pointer justify-between rounded-md px-2">
+                <Link href={"/settings"}>
+                  <span className="text-sm text-primary/60 group-hover:text-primary group-focus:text-primary">
+                    Settings
+                  </span>
+                </Link>
                 <Settings className="h-[18px] w-[18px] stroke-[1.5px] text-primary/60 group-hover:text-primary group-focus:text-primary" />
               </DropdownMenuItem>
 
