@@ -14,4 +14,11 @@ export default defineSchema({
       filterFields: ["code_number"],
     })
     .index("by_code_number", ["code_number"]),
+  booking: defineTable({
+    data: v.any(),
+    charges: v.array(v.any()),
+  }),
+  cause: defineTable({
+    data: v.any(),
+  }),
 });

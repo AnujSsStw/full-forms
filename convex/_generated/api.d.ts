@@ -14,8 +14,10 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as init from "../init.js";
+import type * as mutation from "../mutation.js";
 import type * as pc from "../pc.js";
 import type * as pcSeed from "../pcSeed.js";
+import type * as query from "../query.js";
 import type * as shared from "../shared.js";
 
 /**
@@ -28,8 +30,10 @@ import type * as shared from "../shared.js";
  */
 declare const fullApi: ApiFromModules<{
   init: typeof init;
+  mutation: typeof mutation;
   pc: typeof pc;
   pcSeed: typeof pcSeed;
+  query: typeof query;
   shared: typeof shared;
 }>;
 export declare const api: FilterApi<

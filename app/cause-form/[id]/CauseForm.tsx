@@ -1,17 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { RiversideCountySheriffFormData } from "@/types/forms";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useDebouncedCallback } from "use-debounce";
 
-export function RiversideCountySheriffForm({}: { id: string }) {
+const defaultFormState: RiversideCountySheriffFormData = {
+  // Basic Information
+  "jail-location": "",
+  arrestee: "",
+  dob: "",
+  "agency-case": "",
+  booking: "",
+  "facility-fax": "",
+
+  // Counts and Violations
+  "count-1": "",
+  "count-2": "",
+  "count-3": "",
+  "count-4": "",
+  "violation-1": "",
+  "violation-2": "",
+  "violation-3": "",
+  "violation-4": "",
+
+  // Arrest Details
+  "arresting-agency": "",
+  "arrest-date": "",
+  "arrest-time": "",
+  recommended: "no",
+  reason: "",
+
+  // Warrant Information
+  "arrest-warrant": false,
+  "bench-warrant": false,
+  "parole-hold": false,
+
+  // Victim Information
+  "victim-age": "",
+  "victim-relationship": "",
+  "victim-injuries": "",
+
+  // Contraband Information
+  contraband: "",
+  quantity: "",
+
+  // Probable Cause
+  "probable-cause": "",
+  "additional-info-text": "",
+
+  // Declaration Information
+  "declarant-signature": "",
+  "arr-officer-phone": "",
+  "agency-fax": "",
+  "print-name": "",
+
+  // Determination
+  probable_cause_determination: "is",
+  probable_cause_belief: "exists",
+
+  // Magistrate Information
+  "magistrate-date": "",
+  "magistrate-time": "",
+  "magistrate-signature": "",
+  "by-direction": "",
+};
+
+export function RiversideCountySheriffForm({ id }: { id: string }) {
   const [additionalInfo, setAdditionalInfo] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] =
+    useState<RiversideCountySheriffFormData>(defaultFormState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const updateCauseEntry = useMutation(api.mutation.updateCause);
+  const causeForm = useQuery(api.query.getBookingById, { id });
+
+  useEffect(() => {
+    if (causeForm?.data) {
+      setFormData(causeForm.data);
+    }
+  }, [causeForm?.data]);
+
+  const debouncedCause = useDebouncedCallback(async (value) => {
+    try {
+      await updateCauseEntry({ id, data: value });
+    } catch (error) {
+      console.log(value);
+
+      console.error("Error updating cause:", error);
+    }
+  }, 1000);
 
   const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;
@@ -19,52 +111,104 @@ export function RiversideCountySheriffForm({}: { id: string }) {
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    debouncedCause({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    console.log("Form Data", formData);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    // print the form pdf
+    const form = formRef.current;
+    if (form) {
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      console.log(data);
+
+      // print div
+      const printContent = form.innerHTML;
+      const originalContent = document.body.innerHTML;
+      document.body.innerHTML = printContent;
+      window.print();
+      document.body.innerHTML = originalContent;
+    }
   };
 
   return (
-    <form className="space-y-8 max-w-6xl mx-auto p-4" onSubmit={handleSubmit}>
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="space-y-8 max-w-6xl mx-auto p-4"
+    >
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center">
           <CardTitle className="text-2xl font-bold text-center">
             RIVERSIDE COUNTY SHERIFF DECLARATION AND DETERMINATION
-            <br />
-            (PROBABLE CAUSE FOR WARRANTLESS ARREST)
           </CardTitle>
+          <CardDescription>
+            (PROBABLE CAUSE FOR WARRANTLESS ARREST)
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="jail-location">JAIL Location:</Label>
               <Input
-                name="jail-location"
                 id="jail-location"
+                name="jail-location"
+                value={formData["jail-location"]}
                 onChange={handleInputChange}
               />
             </div>
             <div>
               <Label htmlFor="arrestee">ARRESTEE:</Label>
-              <Input id="arrestee" onChange={handleInputChange} />
+              <Input
+                id="arrestee"
+                name="arrestee"
+                value={formData.arrestee}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="dob">DOB:</Label>
-              <Input id="dob" type="date" onChange={handleInputChange} />
+              <Input
+                id="dob"
+                name="dob"
+                type="date"
+                value={formData["dob"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="agency-case">AGENCY CASE #:</Label>
-              <Input id="agency-case" onChange={handleInputChange} />
+              <Input
+                id="agency-case"
+                name="agency-case"
+                value={formData["agency-case"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="booking">BOOKING #:</Label>
-              <Input id="booking" onChange={handleInputChange} />
+              <Input
+                id="booking"
+                name="booking"
+                value={formData["booking"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="facility-fax">FACILITY/FAX:</Label>
-              <Input id="facility-fax" onChange={handleInputChange} />
+              <Input
+                id="facility-fax"
+                name="facility-fax"
+                value={formData["facility-fax"]}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
 
@@ -72,11 +216,23 @@ export function RiversideCountySheriffForm({}: { id: string }) {
             <div key={count} className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor={`count-${count}`}>Count {count}:</Label>
-                <Input id={`count-${count}`} onChange={handleInputChange} />
+                <Input
+                  id={`count-${count}`}
+                  name={`count-${count}`}
+                  // @ts-ignore
+                  value={formData[`count-${count}`]}
+                  onChange={handleInputChange}
+                />
               </div>
               <div>
                 <Label htmlFor={`violation-${count}`}>Violation Alleged:</Label>
-                <Input id={`violation-${count}`} onChange={handleInputChange} />
+                <Input
+                  id={`violation-${count}`}
+                  name={`violation-${count}`}
+                  // @ts-ignore
+                  value={formData[`violation-${count}`]}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
           ))}
@@ -84,13 +240,20 @@ export function RiversideCountySheriffForm({}: { id: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="arresting-agency">Arresting Agency:</Label>
-              <Input id="arresting-agency" onChange={handleInputChange} />
+              <Input
+                id="arresting-agency"
+                name="arresting-agency"
+                value={formData["arresting-agency"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="arrest-date">Date:</Label>
               <Input
                 id="arrest-date"
+                name="arrest-date"
                 type="date"
+                value={formData["arrest-date"]}
                 onChange={handleInputChange}
               />
             </div>
@@ -98,18 +261,22 @@ export function RiversideCountySheriffForm({}: { id: string }) {
               <Label htmlFor="arrest-time">Time of Arrest:</Label>
               <Input
                 id="arrest-time"
+                name="arrest-time"
                 type="time"
+                value={formData["arrest-time"]}
                 onChange={handleInputChange}
               />
             </div>
             <div>
               <Label>Or Recommended:</Label>
               <RadioGroup
-                defaultValue="no"
                 className="flex space-x-4"
-                onValueChange={(value) =>
-                  handleInputChange({ target: { name: "recommended", value } })
-                }
+                onValueChange={(value) => {
+                  handleInputChange({
+                    target: { name: "recommended", value },
+                  });
+                }}
+                value={formData.recommended}
                 name="recommended"
               >
                 <div className="flex items-center space-x-2">
@@ -126,7 +293,12 @@ export function RiversideCountySheriffForm({}: { id: string }) {
 
           <div>
             <Label htmlFor="reason">Reason:</Label>
-            <Input id="reason" onChange={handleInputChange} />
+            <Input
+              id="reason"
+              name="reason"
+              value={formData["reason"]}
+              onChange={handleInputChange}
+            />
           </div>
 
           <div>
@@ -135,15 +307,42 @@ export function RiversideCountySheriffForm({}: { id: string }) {
             </Label>
             <div className="flex space-x-4 mt-2">
               <div className="flex items-center space-x-2">
-                <Checkbox id="arrest-warrant" onChange={handleInputChange} />
+                <Checkbox
+                  id="arrest-warrant"
+                  name="arrest-warrant"
+                  checked={formData["arrest-warrant"]}
+                  onCheckedChange={(checked) =>
+                    handleInputChange({
+                      target: { name: "arrest-warrant", checked },
+                    })
+                  }
+                />
                 <Label htmlFor="arrest-warrant">Arrest Warrant</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="bench-warrant" onChange={handleInputChange} />
+                <Checkbox
+                  id="bench-warrant"
+                  name="bench-warrant"
+                  checked={formData["bench-warrant"]}
+                  onCheckedChange={(checked) => {
+                    handleInputChange({
+                      target: { name: "bench-warrant", checked },
+                    });
+                  }}
+                />
                 <Label htmlFor="bench-warrant">Bench Warrant</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="parole-hold" onChange={handleInputChange} />
+                <Checkbox
+                  id="parole-hold"
+                  name="parole-hold"
+                  checked={formData["parole-hold"]}
+                  onCheckedChange={(checked) => {
+                    handleInputChange({
+                      target: { name: "parole-hold", checked },
+                    });
+                  }}
+                />
                 <Label htmlFor="parole-hold">Parole Hold</Label>
               </div>
             </div>
@@ -155,28 +354,53 @@ export function RiversideCountySheriffForm({}: { id: string }) {
             </h3>
             <div>
               <Label htmlFor="victim-age">Victim(s) Age:</Label>
-              <Input id="victim-age" onChange={handleInputChange} />
+              <Input
+                id="victim-age"
+                name="victim-age"
+                value={formData["victim-age"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="victim-relationship">
                 Victim(s) Relationship To Arrestee:
               </Label>
-              <Input id="victim-relationship" onChange={handleInputChange} />
+              <Input
+                id="victim-relationship"
+                name="victim-relationship"
+                value={formData["victim-relationship"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="victim-injuries">Victim(s) Injuries:</Label>
-              <Textarea id="victim-injuries" onChange={handleInputChange} />
+              <Textarea
+                id="victim-injuries"
+                name="victim-injuries"
+                value={formData["victim-injuries"]}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="contraband">CONTRABAND DESCRIBED AS:</Label>
-              <Input id="contraband" onChange={handleInputChange} />
+              <Input
+                id="contraband"
+                name="contraband"
+                value={formData["contraband"]}
+                onChange={handleInputChange}
+              />
             </div>
             <div>
               <Label htmlFor="quantity">QUANTITY:</Label>
-              <Input id="quantity" onChange={handleInputChange} />
+              <Input
+                id="quantity"
+                name="quantity"
+                value={formData["quantity"]}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
 
@@ -187,7 +411,9 @@ export function RiversideCountySheriffForm({}: { id: string }) {
             </Label>
             <Textarea
               id="probable-cause"
+              name="probable-cause"
               className="mt-2"
+              value={formData["probable-cause"]}
               onChange={handleInputChange}
             />
           </div>
@@ -212,8 +438,10 @@ export function RiversideCountySheriffForm({}: { id: string }) {
               </Label>
               <Textarea
                 id="additional-info-text"
+                name="additional-info-text"
                 className="mt-2"
                 rows={10}
+                value={formData["additional-info-text"]}
                 onChange={handleInputChange}
               />
             </div>
@@ -232,21 +460,41 @@ export function RiversideCountySheriffForm({}: { id: string }) {
                 <Label htmlFor="declarant-signature">
                   Declarant's Signature & ID #:
                 </Label>
-                <Input id="declarant-signature" onChange={handleInputChange} />
+                <Input
+                  id="declarant-signature"
+                  name="declarant-signature"
+                  value={formData["declarant-signature"]}
+                  onChange={handleInputChange}
+                />
               </div>
               <div>
                 <Label htmlFor="arr-officer-phone">
                   Arr. Officer Phone / Pager #:
                 </Label>
-                <Input id="arr-officer-phone" onChange={handleInputChange} />
+                <Input
+                  id="arr-officer-phone"
+                  name="arr-officer-phone"
+                  value={formData["arr-officer-phone"]}
+                  onChange={handleInputChange}
+                />
               </div>
               <div>
                 <Label htmlFor="agency-fax">Agency Fax:</Label>
-                <Input id="agency-fax" onChange={handleInputChange} />
+                <Input
+                  id="agency-fax"
+                  name="agency-fax"
+                  value={formData["agency-fax"]}
+                  onChange={handleInputChange}
+                />
               </div>
               <div>
                 <Label htmlFor="print-name">Print Name:</Label>
-                <Input id="print-name" onChange={handleInputChange} />
+                <Input
+                  id="print-name"
+                  name="print-name"
+                  value={formData["print-name"]}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
           </div>
@@ -258,11 +506,12 @@ export function RiversideCountySheriffForm({}: { id: string }) {
             </p>
             <RadioGroup
               defaultValue="is"
-              onValueChange={(value) =>
+              onValueChange={(value) => {
                 handleInputChange({
-                  target: { name: "probable-cause-1", value },
-                })
-              }
+                  target: { name: "probable_cause_determination", value },
+                });
+              }}
+              value={formData.probable_cause_determination}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="is" id="is-probable-cause" />
@@ -283,7 +532,9 @@ export function RiversideCountySheriffForm({}: { id: string }) {
               <Label htmlFor="magistrate-date">Date:</Label>
               <Input
                 id="magistrate-date"
+                name="magistrate-date"
                 type="date"
+                value={formData["magistrate-date"]}
                 onChange={handleInputChange}
               />
             </div>
@@ -291,7 +542,9 @@ export function RiversideCountySheriffForm({}: { id: string }) {
               <Label htmlFor="magistrate-time">Time:</Label>
               <Input
                 id="magistrate-time"
+                name="magistrate-time"
                 type="time"
+                value={formData["magistrate-time"]}
                 onChange={handleInputChange}
               />
             </div>
@@ -299,18 +552,25 @@ export function RiversideCountySheriffForm({}: { id: string }) {
               <Label htmlFor="magistrate-signature">
                 Magistrate's Signature:
               </Label>
-              <Input id="magistrate-signature" onChange={handleInputChange} />
+              <Input
+                id="magistrate-signature"
+                name="magistrate-signature"
+                value={formData["magistrate-signature"]}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
 
           <div className="space-y-4">
             <p>Probable Cause to believe arrested person committed a crime:</p>
             <RadioGroup
-              onValueChange={(value) =>
+              value={formData.probable_cause_belief}
+              onValueChange={(value) => {
                 handleInputChange({
-                  target: { name: "probable-cause-2", value },
-                })
-              }
+                  target: { name: "probable_cause_belief", value },
+                });
+              }}
+              defaultValue="exists"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="exists" id="exists" />
@@ -336,7 +596,9 @@ export function RiversideCountySheriffForm({}: { id: string }) {
             <Label htmlFor="by-direction">By Direction:</Label>
             <Input
               id="by-direction"
+              name="by-direction"
               placeholder="(Telephonic Approval / Employee Name)"
+              value={formData["by-direction"]}
               onChange={handleInputChange}
             />
           </div>

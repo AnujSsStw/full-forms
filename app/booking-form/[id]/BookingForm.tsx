@@ -37,11 +37,185 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
-import { useAction, useQuery } from "convex/react";
-import { useEffect, useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useEffect, useRef, useState } from "react";
 import { PenaltyQueryResult } from "@/convex/pc";
 import { Search } from "lucide-react";
-import { PenalCode } from "@/convex/pcSeed";
+
+interface BookingFormState {
+  // Personal Information
+  arrest_time: string;
+  booking_date: string;
+  booking_number: string;
+  last_name: string;
+  first_name: string;
+  middle_name: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  home_telephone: string;
+  military_status: "true" | "false" | "";
+  sex: "male" | "female" | "other" | "";
+  race: string;
+  dob: string;
+  age: string;
+  height: string;
+  weight: string;
+  hair: string;
+  eyes: string;
+  place_of_birth: string;
+
+  // Identification
+  drivers_license: string;
+  dl_state: string;
+  ssn: string;
+
+  // Employment
+  employer: string;
+  occupation: string;
+
+  // Additional Information
+  other_names: string;
+  tattoos_scars_marks: string;
+
+  // Emergency Contact
+  emergency_contact: string;
+  emergency_relationship: string;
+  emergency_address: string;
+  emergency_phone: string;
+
+  // Arrest Details
+  arrest_agency: string;
+  agency_case_number: string;
+  arrest_location: string;
+  vehicle_disposition: string;
+  arresting_officer_id: string;
+  transporting_officer_id: string;
+  type_of_arrest: "on-view" | "warrent" | "citizen" | "other" | "";
+
+  // Victim Notification
+  victim_notification: boolean;
+
+  // Medical and Safety
+  suicidal_behavior: boolean;
+  vehicle_accident: boolean;
+  lost_consciousness: boolean;
+  non_law_enforcement: boolean;
+  special_housing_needs: boolean;
+  ok_to_book: boolean;
+  suicidal_behavior_explanation: string;
+
+  // Wrap Restraint
+  wrap_restraint: boolean;
+  wrap_restraint_force: boolean;
+  wrap_restraint_time_placed: string;
+  wrap_restraint_time_removed: string;
+  wrap_restraint_jail_transport: boolean;
+
+  // Release Information
+  citation_release_denied: boolean;
+  approving_supervisor: string;
+  citation_release_reason: string;
+  or_release_recommended: boolean;
+  notify_arresting_agency: boolean;
+  notification_contact: string;
+
+  // Consular Notification
+  consular_notification_time: string;
+  consular_notification_who_contacted: string;
+  consular_notification_by_whom: string;
+  consular_notification_type: "mandatory" | "requested" | "";
+  consular_notification_country: string;
+  consular_notification_made_by: string;
+
+  // Officers
+  arresting_officer: string;
+  booking_officer: string;
+
+  // Billing Information
+  on_sight: string;
+  agency_case_number_billing: string;
+  riverside_warrant_number: string;
+  originative_police_agency: string;
+  reviewed_by: string;
+  send_bill_to: string;
+}
+
+const defaultFormState: BookingFormState = {
+  arrest_time: "",
+  booking_date: "",
+  booking_number: "",
+  last_name: "",
+  first_name: "",
+  middle_name: "",
+  street: "",
+  city: "",
+  state: "",
+  zip: "",
+  home_telephone: "",
+  military_status: "",
+  sex: "",
+  race: "",
+  dob: "",
+  age: "",
+  height: "",
+  weight: "",
+  hair: "",
+  eyes: "",
+  place_of_birth: "",
+  drivers_license: "",
+  dl_state: "",
+  ssn: "",
+  employer: "",
+  occupation: "",
+  other_names: "",
+  tattoos_scars_marks: "",
+  emergency_contact: "",
+  emergency_relationship: "",
+  emergency_address: "",
+  emergency_phone: "",
+  arrest_agency: "",
+  agency_case_number: "",
+  arrest_location: "",
+  vehicle_disposition: "",
+  arresting_officer_id: "",
+  transporting_officer_id: "",
+  type_of_arrest: "",
+  victim_notification: false,
+  suicidal_behavior: false,
+  vehicle_accident: false,
+  lost_consciousness: false,
+  non_law_enforcement: false,
+  special_housing_needs: false,
+  ok_to_book: false,
+  suicidal_behavior_explanation: "",
+  wrap_restraint: false,
+  wrap_restraint_force: false,
+  wrap_restraint_time_placed: "",
+  wrap_restraint_time_removed: "",
+  wrap_restraint_jail_transport: false,
+  citation_release_denied: false,
+  approving_supervisor: "",
+  citation_release_reason: "",
+  or_release_recommended: false,
+  notify_arresting_agency: false,
+  notification_contact: "",
+  consular_notification_time: "",
+  consular_notification_who_contacted: "",
+  consular_notification_by_whom: "",
+  consular_notification_type: "",
+  consular_notification_country: "",
+  consular_notification_made_by: "",
+  arresting_officer: "",
+  booking_officer: "",
+  on_sight: "",
+  agency_case_number_billing: "",
+  riverside_warrant_number: "",
+  originative_police_agency: "",
+  reviewed_by: "",
+  send_bill_to: "",
+};
 
 interface FormEntry {
   id: number;
@@ -54,7 +228,7 @@ interface FormEntry {
 }
 
 export function BookingForm({ id }: { id: string }) {
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<BookingFormState>(defaultFormState);
   const [entries, setEntries] = useState<FormEntry[]>([]);
   const [newEntry, setNewEntry] = useState<FormEntry>({
     id: Date.now(),
@@ -76,13 +250,18 @@ export function BookingForm({ id }: { id: string }) {
   //   };
   // }).slice(0, 10)
   const [searchTerm, setSearchTerm] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const q = useAction(api.pc.getPenalty);
+  const updateBookingEntry = useMutation(api.mutation.updateBooking);
+  const bookingForm = useQuery(api.query.getBookingById, { id });
 
-  const debounced = useDebouncedCallback(async (value) => {
-    const data = await q({ query: value, queryByCode });
-    setPenalCode(data);
-  }, 1000);
+  useEffect(() => {
+    if (bookingForm?.data) {
+      setFormData(bookingForm.data);
+      setEntries(bookingForm.charges);
+    }
+  }, [bookingForm]);
 
   useEffect(() => {
     if (searchTerm.length < 3 && queryByCode === false) return;
@@ -90,7 +269,16 @@ export function BookingForm({ id }: { id: string }) {
     debounced(searchTerm);
   }, [searchTerm]);
 
-  const addEntry = () => {
+  const debounced = useDebouncedCallback(async (value) => {
+    const data = await q({ query: value, queryByCode });
+    setPenalCode(data);
+  }, 1000);
+
+  const debouncedBooking = useDebouncedCallback(async (value) => {
+    await updateBookingEntry({ id, data: value, includeCharges: false });
+  }, 1000);
+
+  const addEntry = async () => {
     if (!newEntry.charges) return;
     setEntries([...entries, newEntry]);
     setNewEntry({
@@ -102,6 +290,8 @@ export function BookingForm({ id }: { id: string }) {
       warrantNumber: "",
       bail: "",
     });
+
+    await updateBookingEntry({ id, data: newEntry, includeCharges: true });
   };
 
   const updateNewEntry = (key: keyof FormEntry, value: string) => {
@@ -118,6 +308,11 @@ export function BookingForm({ id }: { id: string }) {
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    debouncedBooking({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
   const handleAddPenalCode = (idx: number) => {
@@ -135,14 +330,33 @@ export function BookingForm({ id }: { id: string }) {
   const handleSubmit = (e: any) => {
     e.preventDefault();
     console.log(formData, entries);
+
+    const form = formRef.current;
+    if (form) {
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      console.log(data);
+
+      // print div
+      const printContent = form.innerHTML;
+      const originalContent = document.body.innerHTML;
+      document.body.innerHTML = printContent;
+      window.print();
+      document.body.innerHTML = originalContent;
+    }
   };
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-8 max-w-6xl mx-auto p-4">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="space-y-8 max-w-6xl mx-auto p-4"
+      >
         <Card>
           <CardHeader className="flex items-center">
-            <CardTitle>
+            <CardTitle className="text-3xl">
               Riverside County Sheriff's Office Booking Form
             </CardTitle>
             <CardDescription>
@@ -163,6 +377,7 @@ export function BookingForm({ id }: { id: string }) {
                     id="arrest_time"
                     name="arrest_time"
                     onChange={handleInputChange}
+                    value={formData.arrest_time}
                   />
                 </div>
                 <div className="space-y-2">
@@ -171,6 +386,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="datetime-local"
                     id="booking_date"
                     name="booking_date"
+                    value={formData.booking_date}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -180,6 +396,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="booking_number"
                     name="booking_number"
+                    value={formData.booking_number}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -196,6 +413,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="last_name"
                     name="last_name"
+                    value={formData.last_name}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -205,6 +423,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="first_name"
                     name="first_name"
+                    value={formData.first_name}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -214,6 +433,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="middle_name"
                     name="middle_name"
+                    value={formData.middle_name}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -225,6 +445,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="street"
                     name="street"
+                    value={formData.street}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -234,6 +455,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="city"
                     name="city"
+                    value={formData.city}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -243,6 +465,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="state"
                     name="state"
+                    value={formData.state}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -252,6 +475,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="zip"
                     name="zip"
+                    value={formData.zip}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -263,6 +487,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="tel"
                     id="home_telephone"
                     name="home_telephone"
+                    value={formData.home_telephone}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -270,6 +495,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Label>Military Status</Label>
                   <RadioGroup
                     name="military_status"
+                    value={formData.military_status}
                     onValueChange={(value) =>
                       handleInputChange({
                         target: { name: "military_status", value },
@@ -293,9 +519,10 @@ export function BookingForm({ id }: { id: string }) {
                   <Label htmlFor="sex">Sex</Label>
                   <Select
                     name="sex"
-                    onValueChange={(value) =>
-                      handleInputChange({ target: { name: "sex", value } })
-                    }
+                    value={formData.sex}
+                    onValueChange={(value) => {
+                      handleInputChange({ target: { name: "sex", value } });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select sex" />
@@ -313,6 +540,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="race"
                     name="race"
+                    value={formData.race}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -322,6 +550,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="date"
                     id="dob"
                     name="dob"
+                    value={formData.dob}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -333,6 +562,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="number"
                     id="age"
                     name="age"
+                    value={formData.age}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -342,6 +572,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="height"
                     name="height"
+                    value={formData.height}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -351,6 +582,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="weight"
                     name="weight"
+                    value={formData.weight}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -360,6 +592,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="hair"
                     name="hair"
+                    value={formData.hair}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -371,6 +604,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="eyes"
                     name="eyes"
+                    value={formData.eyes}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -380,6 +614,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="place_of_birth"
                     name="place_of_birth"
+                    value={formData.place_of_birth}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -396,6 +631,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="drivers_license"
                     name="drivers_license"
+                    value={formData.drivers_license}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -405,6 +641,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="dl_state"
                     name="dl_state"
+                    value={formData.dl_state}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -414,6 +651,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="ssn"
                     name="ssn"
+                    value={formData.ssn}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -430,6 +668,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="employer"
                     name="employer"
+                    value={formData.employer}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -439,6 +678,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="occupation"
                     name="occupation"
+                    value={formData.occupation}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -453,6 +693,7 @@ export function BookingForm({ id }: { id: string }) {
                 <Textarea
                   id="other_names"
                   name="other_names"
+                  value={formData.other_names}
                   onChange={handleInputChange}
                 />
               </div>
@@ -463,6 +704,7 @@ export function BookingForm({ id }: { id: string }) {
                 <Textarea
                   id="tattoos_scars_marks"
                   name="tattoos_scars_marks"
+                  value={formData.tattoos_scars_marks}
                   onChange={handleInputChange}
                 />
               </div>
@@ -478,6 +720,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="emergency_contact"
                     name="emergency_contact"
+                    value={formData.emergency_contact}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -487,6 +730,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="emergency_relationship"
                     name="emergency_relationship"
+                    value={formData.emergency_relationship}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -495,6 +739,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Textarea
                     id="emergency_address"
                     name="emergency_address"
+                    value={formData.emergency_address}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -504,6 +749,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="tel"
                     id="emergency_phone"
                     name="emergency_phone"
+                    value={formData.emergency_phone}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -520,6 +766,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="arrest_agency"
                     name="arrest_agency"
+                    value={formData.arrest_agency}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -529,6 +776,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="agency_case_number"
                     name="agency_case_number"
+                    value={formData.agency_case_number}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -537,6 +785,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Textarea
                     id="arrest_location"
                     name="arrest_location"
+                    value={formData.arrest_location}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -547,6 +796,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Textarea
                     id="vehicle_disposition"
                     name="vehicle_disposition"
+                    value={formData.vehicle_disposition}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -558,6 +808,7 @@ export function BookingForm({ id }: { id: string }) {
                     type="text"
                     id="arresting_officer_id"
                     name="arresting_officer_id"
+                    value={formData.arresting_officer_id}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -568,6 +819,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Input
                     type="text"
                     id="transporting_officer_id"
+                    value={formData.transporting_officer_id}
                     name="transporting_officer_id"
                     onChange={handleInputChange}
                   />
@@ -580,7 +832,16 @@ export function BookingForm({ id }: { id: string }) {
               <h3 className="text-lg font-semibold">Booking Charges</h3>
               <div className="flex gap-2">
                 <Label>Type of Arrest</Label>
-                <RadioGroup defaultValue="option-one" className="flex">
+                <RadioGroup
+                  defaultValue="option-one"
+                  className="flex"
+                  value={formData.type_of_arrest}
+                  onValueChange={(value) =>
+                    handleInputChange({
+                      target: { name: "type_of_arrest", value },
+                    })
+                  }
+                >
                   <div className="flex  items-center space-x-2">
                     <RadioGroupItem value="on-view" id="on-view" />
                     <Label htmlFor="on-view">On View</Label>
@@ -617,8 +878,6 @@ export function BookingForm({ id }: { id: string }) {
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                     size={20}
                   />
-
-                  {/* add a checkbox in the right side of the search box with the tooltip  */}
 
                   <TooltipProvider>
                     <Tooltip>
@@ -787,6 +1046,7 @@ export function BookingForm({ id }: { id: string }) {
                 <Checkbox
                   id="victim_notification"
                   name="victim_notification"
+                  checked={formData.victim_notification}
                   onCheckedChange={(checked) =>
                     handleInputChange({
                       target: {
@@ -817,6 +1077,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="suicidal_behavior"
                     name="suicidal_behavior"
+                    checked={formData.suicidal_behavior}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -835,6 +1096,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="vehicle_accident"
                     name="vehicle_accident"
+                    checked={formData.vehicle_accident}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -853,6 +1115,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="lost_consciousness"
                     name="lost_consciousness"
+                    checked={formData.lost_consciousness}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -871,6 +1134,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="non_law_enforcement"
                     name="non_law_enforcement"
+                    checked={formData.non_law_enforcement}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -889,6 +1153,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="special_housing_needs"
                     name="special_housing_needs"
+                    checked={formData.special_housing_needs}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -907,6 +1172,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="ok_to_book"
                     name="ok_to_book"
+                    checked={formData.ok_to_book}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -929,6 +1195,7 @@ export function BookingForm({ id }: { id: string }) {
                 <Textarea
                   id="suicidal_behavior_explanation"
                   name="suicidal_behavior_explanation"
+                  value={formData.suicidal_behavior_explanation}
                   onChange={handleInputChange}
                 />
               </div>
@@ -944,6 +1211,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="wrap_restraint"
                     name="wrap_restraint"
+                    checked={formData.wrap_restraint}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -962,6 +1230,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="wrap_restraint_force"
                     name="wrap_restraint_force"
+                    checked={formData.wrap_restraint_force}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -981,6 +1250,7 @@ export function BookingForm({ id }: { id: string }) {
                     Time of Placement
                   </Label>
                   <Input
+                    value={formData.wrap_restraint_time_placed}
                     type="time"
                     id="wrap_restraint_time_placed"
                     name="wrap_restraint_time_placed"
@@ -992,6 +1262,7 @@ export function BookingForm({ id }: { id: string }) {
                     Time Removed
                   </Label>
                   <Input
+                    value={formData.wrap_restraint_time_removed}
                     type="time"
                     id="wrap_restraint_time_removed"
                     name="wrap_restraint_time_removed"
@@ -1001,6 +1272,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="wrap_restraint_jail_transport"
+                    checked={formData.wrap_restraint_jail_transport}
                     name="wrap_restraint_jail_transport"
                     onCheckedChange={(checked) =>
                       handleInputChange({
@@ -1025,6 +1297,7 @@ export function BookingForm({ id }: { id: string }) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
+                    checked={formData.citation_release_denied}
                     id="citation_release_denied"
                     name="citation_release_denied"
                     onCheckedChange={(checked) =>
@@ -1046,6 +1319,7 @@ export function BookingForm({ id }: { id: string }) {
                     Approving Supervisor
                   </Label>
                   <Input
+                    value={formData.approving_supervisor}
                     type="text"
                     id="approving_supervisor"
                     name="approving_supervisor"
@@ -1055,6 +1329,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="citation_release_reason">Reason Denied</Label>
                   <Textarea
+                    value={formData.citation_release_reason}
                     id="citation_release_reason"
                     name="citation_release_reason"
                     onChange={handleInputChange}
@@ -1064,6 +1339,7 @@ export function BookingForm({ id }: { id: string }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
+                    checked={formData.or_release_recommended}
                     id="or_release_recommended"
                     name="or_release_recommended"
                     onCheckedChange={(checked) =>
@@ -1083,6 +1359,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="citation_release_reason">Reason Denied</Label>
                   <Textarea
+                    value={formData.citation_release_reason}
                     id="citation_release_reason"
                     name="citation_release_reason"
                     onChange={handleInputChange}
@@ -1094,6 +1371,7 @@ export function BookingForm({ id }: { id: string }) {
                   <Checkbox
                     id="notify_arresting_agency"
                     name="notify_arresting_agency"
+                    checked={formData.notify_arresting_agency}
                     onCheckedChange={(checked) =>
                       handleInputChange({
                         target: {
@@ -1113,6 +1391,7 @@ export function BookingForm({ id }: { id: string }) {
                     Person & 24 hr Phone #
                   </Label>
                   <Input
+                    value={formData.notification_contact}
                     type="text"
                     id="notification_contact"
                     name="notification_contact"
@@ -1126,6 +1405,7 @@ export function BookingForm({ id }: { id: string }) {
                     Agency contact time & Date
                   </Label>
                   <Input
+                    value={formData.consular_notification_time}
                     type="datetime-local"
                     id="consular_notification_time"
                     name="consular_notification_time"
@@ -1137,6 +1417,7 @@ export function BookingForm({ id }: { id: string }) {
                     Who was contacted?
                   </Label>
                   <Input
+                    value={formData.consular_notification_who_contacted}
                     type="text"
                     id="consular_notification_who_contacted"
                     name="consular_notification_who_contacted"
@@ -1146,6 +1427,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div>
                   <Label htmlFor="consular_notification_by_whom">By whom</Label>
                   <Input
+                    value={formData.consular_notification_by_whom}
                     type="text"
                     id="consular_notification_by_whom"
                     name="consular_notification_by_whom"
@@ -1163,6 +1445,7 @@ export function BookingForm({ id }: { id: string }) {
               <div className="flex gap-4">
                 <Label>Notification Type</Label>
                 <RadioGroup
+                  value={formData.consular_notification_type}
                   name="consular_notification_type"
                   onValueChange={(value) =>
                     handleInputChange({
@@ -1190,6 +1473,7 @@ export function BookingForm({ id }: { id: string }) {
               <div>
                 <Label htmlFor="consular_notification_country">Country</Label>
                 <Input
+                  value={formData.consular_notification_country}
                   type="text"
                   id="consular_notification_country"
                   name="consular_notification_country"
@@ -1201,6 +1485,7 @@ export function BookingForm({ id }: { id: string }) {
                   Name/ID# of person making notification
                 </Label>
                 <Input
+                  value={formData.consular_notification_made_by}
                   type="text"
                   id="consular_notification_made_by"
                   name="consular_notification_made_by"
@@ -1218,6 +1503,7 @@ export function BookingForm({ id }: { id: string }) {
                     Arresting Officer
                   </Label>
                   <Input
+                    value={formData.arresting_officer}
                     type="text"
                     id="approving_supervisor"
                     name="approving_supervisor"
@@ -1227,6 +1513,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="reviewed_by">Booking Officer</Label>
                   <Input
+                    value={formData.booking_officer}
                     type="text"
                     id="reviewed_by"
                     name="reviewed_by"
@@ -1245,6 +1532,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="approving_supervisor">On-sight</Label>
                   <Input
+                    value={formData.approving_supervisor}
                     type="text"
                     id="approving_supervisor"
                     name="approving_supervisor"
@@ -1254,6 +1542,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="reviewed_by">Agency Case Number</Label>
                   <Input
+                    value={formData.reviewed_by}
                     type="text"
                     id="reviewed_by"
                     name="reviewed_by"
@@ -1265,6 +1554,7 @@ export function BookingForm({ id }: { id: string }) {
                     Riverside County Warrant Number
                   </Label>
                   <Input
+                    value={formData.send_bill_to}
                     type="text"
                     id="send_bill_to"
                     name="send_bill_to"
@@ -1276,6 +1566,7 @@ export function BookingForm({ id }: { id: string }) {
                     Originative Police Agency
                   </Label>
                   <Input
+                    value={formData.originative_police_agency}
                     type="text"
                     id="originative_police_agency"
                     name="originative_police_agency"
@@ -1285,6 +1576,7 @@ export function BookingForm({ id }: { id: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="originative_police_agency">Reviewed by</Label>
                   <Input
+                    value={formData.originative_police_agency}
                     type="text"
                     id="originative_police_agency"
                     name="originative_police_agency"
@@ -1296,6 +1588,7 @@ export function BookingForm({ id }: { id: string }) {
                     Send Bill to
                   </Label>
                   <Input
+                    value={formData.originative_police_agency}
                     type="text"
                     id="originative_police_agency"
                     name="originative_police_agency"
