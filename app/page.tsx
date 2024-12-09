@@ -1,3 +1,3 @@
 export default function Home() {
-  return <main>helo</main>;
+  return <main>click on booking or cause</main>;
 }
