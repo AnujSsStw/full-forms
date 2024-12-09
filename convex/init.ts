@@ -45,7 +45,7 @@ export default internalAction(async (ctx) => {
     // Process batch and add delay between batches
     await processBatch(ctx, batch);
     if (i < totalBatches - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay between batches
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay between batches
     }
   }
 
