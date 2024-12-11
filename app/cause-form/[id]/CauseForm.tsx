@@ -171,8 +171,8 @@ export function RiversideCountySheriffForm({
             <div>
               <Label htmlFor="arrestee-info">Arrestee information:</Label>
               <Input
-                id="arrestee-info"
-                name="arrestee-info"
+                id="arrestee_info"
+                name="arrestee_info"
                 value={formData["arrestee_info"]}
                 onChange={handleInputChange}
               />

@@ -55,7 +55,7 @@ export default function IndexCausePage() {
               {getAllCause.map((entry) => (
                 <div
                   key={entry._id}
-                  className="p-4 border rounded  flex justify-between items-center"
+                  className="p-4 border rounded  flex justify-between items-center mb-4"
                 >
                   <div
                     onClick={() => {
@@ -63,6 +63,12 @@ export default function IndexCausePage() {
                     }}
                     className="cursor-pointer"
                   >
+                    <div>
+                      Created At{" "}
+                      {new Date(entry._creationTime).toLocaleDateString(
+                        "en-US"
+                      )}
+                    </div>
                     {JSON.stringify(entry, null, 2)}
                   </div>
                   <Button
