@@ -9,7 +9,12 @@ export default async function BookingFormPage({
 }) {
   const d = await (
     await fetch(
-      `https://healthy-kangaroo-437.convex.site/get-data/${params.id}`
+      `https://healthy-kangaroo-437.convex.site/get-data/${params.id}`,
+      {
+        next: {
+          revalidate: 0,
+        },
+      }
     )
   ).json();
 

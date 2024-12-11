@@ -41,7 +41,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { PenaltyQueryResult } from "@/convex/pc";
 import { Search } from "lucide-react";
-import { fillPdfForm } from "./pdfconvertor";
+import { fillPdfForm } from "./p";
 
 interface BookingFormState {
   // Personal Information
@@ -265,15 +265,16 @@ export function BookingForm({
 
   useEffect(() => {
     if (bookingForm?.data) {
-      // Only update if data actually changed to prevent unnecessary rerenders
-      if (JSON.stringify(bookingForm.data) !== JSON.stringify(formData)) {
-        setFormData(bookingForm.data);
-      }
-      if (JSON.stringify(bookingForm.charges) !== JSON.stringify(entries)) {
-        setEntries(bookingForm.charges);
+      setFormData({
+        ...defaultFormState,
+        ...bookingForm.data,
+      });
+
+      if (bookingForm.data.entries) {
+        setEntries(bookingForm.data.entries);
       }
     }
-  }, [bookingForm]);
+  }, []);
 
   useEffect(() => {
     if (searchTerm.length < 3 && queryByCode === false) return;

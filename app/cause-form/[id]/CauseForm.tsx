@@ -441,7 +441,7 @@ export function RiversideCountySheriffForm({
             </Label>
           </div>
 
-          {formData["additional-info-text"] && (
+          {formData["additional_page_checkbox"] && (
             <div>
               <Label htmlFor="additional-info-text">
                 Additional Information:
