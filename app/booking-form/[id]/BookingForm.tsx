@@ -41,6 +41,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { PenaltyQueryResult } from "@/convex/pc";
 import { Search } from "lucide-react";
+import { fillPdfForm } from "./pdfconvertor";
 
 interface BookingFormState {
   // Personal Information
@@ -227,7 +228,13 @@ interface FormEntry {
   bail: string;
 }
 
-export function BookingForm({ id }: { id: string }) {
+export function BookingForm({
+  id,
+  bookingForm,
+}: {
+  id: string;
+  bookingForm: any;
+}) {
   const [formData, setFormData] = useState<BookingFormState>(defaultFormState);
   const [entries, setEntries] = useState<FormEntry[]>([]);
   const [newEntry, setNewEntry] = useState<FormEntry>({
@@ -254,12 +261,17 @@ export function BookingForm({ id }: { id: string }) {
 
   const q = useAction(api.pc.getPenalty);
   const updateBookingEntry = useMutation(api.mutation.updateBooking);
-  const bookingForm = useQuery(api.query.getBookingById, { id });
+  // const pdfUrl = useQuery(api.query.getBookingPdf);
 
   useEffect(() => {
     if (bookingForm?.data) {
-      setFormData(bookingForm.data);
-      setEntries(bookingForm.charges);
+      // Only update if data actually changed to prevent unnecessary rerenders
+      if (JSON.stringify(bookingForm.data) !== JSON.stringify(formData)) {
+        setFormData(bookingForm.data);
+      }
+      if (JSON.stringify(bookingForm.charges) !== JSON.stringify(entries)) {
+        setEntries(bookingForm.charges);
+      }
     }
   }, [bookingForm]);
 
@@ -329,7 +341,7 @@ export function BookingForm({ id }: { id: string }) {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    console.log(formData, entries);
+    console.log("submitting form", formData, entries);
 
     const form = formRef.current;
     if (form) {
@@ -337,13 +349,11 @@ export function BookingForm({ id }: { id: string }) {
       const data = Object.fromEntries(formData.entries());
 
       console.log(data);
+      console.log(
+        "https://healthy-kangaroo-437.convex.cloud/api/storage/b220244c-0754-4b56-bc7a-4dacb1b2226f"
+      );
 
-      // print div
-      const printContent = form.innerHTML;
-      const originalContent = document.body.innerHTML;
-      document.body.innerHTML = printContent;
-      window.print();
-      document.body.innerHTML = originalContent;
+      // fillPdfForm(pdfUrl, data);
     }
   };
 

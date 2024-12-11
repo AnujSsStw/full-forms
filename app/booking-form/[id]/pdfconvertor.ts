@@ -1,0 +1,131 @@
+import { PDFDocument } from "pdf-lib";
+
+export async function fillPdfForm(
+  input: string,
+  data: {
+    [key: string]: FormDataEntryValue;
+  }
+) {
+  try {
+    const response = await fetch(input);
+    const pdfBytes = await response.arrayBuffer();
+
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const form = pdfDoc.getForm();
+    const allFields = {
+      arrest_time: form.getTextField("Arrest Time"),
+      booking_date_time: form.getTextField("Booking Date and Time"),
+      arrest_date: form.getTextField("Arrest Date"),
+      booking_number: form.getTextField("Booking Number"),
+      defendant_information: form.getTextField("DEFENDANT INFORMATION"),
+      street: form.getTextField("Street"),
+      city: form.getTextField("City"),
+      zip: form.getTextField("Zip"),
+      phone: form.getTextField("Phone"),
+      sex: form.getTextField("Sex"),
+      race: form.getTextField("Race"),
+      dob: form.getTextField("DOB"),
+      age: form.getTextField("Age"),
+      height: form.getTextField("Height"),
+      weight: form.getTextField("Weight"),
+      hair: form.getTextField("Hair"),
+      eyes: form.getTextField("Eyes"),
+      place_of_birth: form.getTextField("Place of Birth"),
+      ssn: form.getTextField("SSN"),
+      employer: form.getTextField("Employer"),
+      occupation: form.getTextField("Occupation"),
+      other_names_used: form.getTextField("Other Names Used"),
+      emergency_contact: form.getTextField("Emergency Contact"),
+      relationship: form.getTextField("Relationship"),
+      address_of_contact: form.getTextField("Address of Contact"),
+      phone_2: form.getTextField("Phone_2"),
+      tattoos_scars_marks: form.getTextField("TattoosScarsMarks"),
+      agency_case_number: form.getTextField("Agency Case Number"),
+      arrest_location: form.getTextField("Arrest Location"),
+      vehicle_disposition_towing_company: form.getTextField(
+        "Vehicle DispositionTowing Company"
+      ),
+      arresting_officer_id: form.getTextField("Arresting OfficerID"),
+      transporting_officer_id: form.getTextField("Transporting OfficerID"),
+      charges_row1: form.getTextField("ChargesRow1"),
+      mf_row1: form.getTextField("MFRow1"),
+      charges_row2: form.getTextField("ChargesRow2"),
+      mf_row2: form.getTextField("MFRow2"),
+      charges_row3: form.getTextField("ChargesRow3"),
+      mf_row3: form.getTextField("MFRow3"),
+      charges_row4: form.getTextField("ChargesRow4"),
+      mf_row4: form.getTextField("MFRow4"),
+      charges_row5: form.getTextField("ChargesRow5"),
+      mf_row5: form.getTextField("MFRow5"),
+      on_sight: form.getTextField("OnSight"),
+      agency_case_number_2: form.getTextField("Agency Case Number_2"),
+      riverside_county_warrant_number: form.getTextField(
+        "Riverside County Warrant Number"
+      ),
+      originative_police_agency: form.getTextField("Originative Police Agency"),
+      reviewed_by: form.getTextField("Reviewed by"),
+      send_bill_to: form.getTextField("Send bill to"),
+      reason_denied: form.getTextField("Reason Denied"),
+      person_24_hr_phone: form.getTextField("Person  24 hr Phone"),
+      arresting_agency_to_be_notified: form.getTextField(
+        "Arresting Agency to be notified upon release of prisoner"
+      ),
+      who_was_contacted: form.getTextField("Who was contacted"),
+      arresting_officer: form.getTextField("Arresting Officer"),
+      booking_officer: form.getTextField("Booking Officer"),
+      state: form.getTextField("State"),
+      drivers_license: form.getTextField("Drivers License"),
+      type_of_arrest: form.getRadioGroup("Type of Arrest"),
+      narrative1: form.getTextField("Narrative1"),
+      court1: form.getTextField("Court1"),
+      warrant1: form.getTextField("Warrant1"),
+      bail1: form.getTextField("Bail1"),
+      narrative2: form.getTextField("Narrative2"),
+      court2: form.getTextField("Court2"),
+      warrant2: form.getTextField("Warrant2"),
+      bail2: form.getTextField("Bail2"),
+      narrative3: form.getTextField("Narrative3"),
+      court3: form.getTextField("Court3"),
+      warrant3: form.getTextField("Warrant3"),
+      bail3: form.getTextField("Bail3"),
+      narrative4: form.getTextField("Narrative4"),
+      court4: form.getTextField("Court4"),
+      warrant4: form.getTextField("Warrant4"),
+      bail4: form.getTextField("Bail4"),
+      narrative5: form.getTextField("Narrative5"),
+      court5: form.getTextField("Court5"),
+      warrant5: form.getTextField("Warrant5"),
+      victim_request: form.getRadioGroup("Victim Request"),
+      yes_no1: form.getRadioGroup("Yes/No1"),
+      yes_no2: form.getRadioGroup("Yes/No2"),
+      yes_no3: form.getRadioGroup("Yes/No3"),
+      yes_no4: form.getRadioGroup("Yes/No4"),
+      yes_no5: form.getRadioGroup("Yes/No5"),
+      yes_no6: form.getRadioGroup("Yes/No6"),
+      yes_no7: form.getRadioGroup("Yes/No7"),
+      denied: form.getRadioGroup("Denied"),
+      explain: form.getTextField("Explain"),
+      supervisor: form.getTextField("Supervisor"),
+      reason: form.getTextField("Reason"),
+      release: form.getRadioGroup("Release"),
+      notified: form.getRadioGroup("Notified"),
+      group1: form.getRadioGroup("Group1"),
+      group3: form.getRadioGroup("Group3"),
+      group4: form.getRadioGroup("Group4"),
+      by_whom: form.getTextField("By whom"),
+      dlstate: form.getTextField("DLSTATE"),
+      name_id_person_making: form.getTextField("Name/ID of person making"),
+      country: form.getTextField("Country"),
+      yes_no8: form.getRadioGroup("Yes/No8"),
+      bail5: form.getTextField("Bail5"),
+      time_of_placement: form.getTextField("Time of Placement"),
+      time_removed: form.getTextField("Time Removed"),
+      wrap_yes: form.getRadioGroup("WRAP Yes"),
+      wrap_no: form.getRadioGroup("WRAP No"),
+      transport_wrap_yes: form.getRadioGroup("Transport WRAP Yes"),
+      transport_wrap_no: form.getRadioGroup("Transport WRAP No"),
+    };
+  } catch (err) {
+    console.error("Error:", err);
+  }
+}

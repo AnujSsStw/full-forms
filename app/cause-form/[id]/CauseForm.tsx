@@ -18,11 +18,13 @@ import { RiversideCountySheriffFormData } from "@/types/forms";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useDebouncedCallback } from "use-debounce";
+import { fillCauseForm } from "./p";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
   "jail-location": "",
   arrestee: "",
+  arrestee_info: "",
   dob: "",
   "agency-case": "",
   booking: "",
@@ -46,9 +48,7 @@ const defaultFormState: RiversideCountySheriffFormData = {
   reason: "",
 
   // Warrant Information
-  "arrest-warrant": false,
-  "bench-warrant": false,
-  "parole-hold": false,
+  "probable-cause-radio": "arrest-warrant",
 
   // Victim Information
   "victim-age": "",
@@ -62,6 +62,8 @@ const defaultFormState: RiversideCountySheriffFormData = {
   // Probable Cause
   "probable-cause": "",
   "additional-info-text": "",
+
+  additional_page_checkbox: false,
 
   // Declaration Information
   "declarant-signature": "",
@@ -80,20 +82,25 @@ const defaultFormState: RiversideCountySheriffFormData = {
   "by-direction": "",
 };
 
-export function RiversideCountySheriffForm({ id }: { id: string }) {
-  const [additionalInfo, setAdditionalInfo] = useState(false);
+export function RiversideCountySheriffForm({
+  id,
+  data,
+}: {
+  id: string;
+  data: any;
+}) {
   const [formData, setFormData] =
     useState<RiversideCountySheriffFormData>(defaultFormState);
   const formRef = useRef<HTMLFormElement>(null);
 
   const updateCauseEntry = useMutation(api.mutation.updateCause);
-  const causeForm = useQuery(api.query.getBookingById, { id });
+  // const causeForm = useQuery(api.query.getBookingById, { id });
 
   useEffect(() => {
-    if (causeForm?.data) {
-      setFormData(causeForm.data);
+    if (data) {
+      setFormData((p) => ({ ...p, ...data.data }));
     }
-  }, [causeForm?.data]);
+  }, []);
 
   const debouncedCause = useDebouncedCallback(async (value) => {
     try {
@@ -107,6 +114,7 @@ export function RiversideCountySheriffForm({ id }: { id: string }) {
 
   const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
@@ -118,24 +126,29 @@ export function RiversideCountySheriffForm({ id }: { id: string }) {
     });
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log("handleSubmit", formData);
+    const pdfbytes = await fillCauseForm(formData);
+    if (!pdfbytes) return;
 
-    // print the form pdf
-    const form = formRef.current;
-    if (form) {
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
+    const blob = new Blob([pdfbytes], { type: "application/pdf" });
 
-      console.log(data);
+    // Create a URL for the blob
+    const url = URL.createObjectURL(blob);
 
-      // print div
-      const printContent = form.innerHTML;
-      const originalContent = document.body.innerHTML;
-      document.body.innerHTML = printContent;
-      window.print();
-      document.body.innerHTML = originalContent;
-    }
+    // Create a temporary link element
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `cause-form-${formData["arrestee"] || "download"}.pdf`; // Set the filename
+
+    // Append to document, click, and cleanup
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -155,6 +168,15 @@ export function RiversideCountySheriffForm({ id }: { id: string }) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="arrestee-info">Arrestee information:</Label>
+              <Input
+                id="arrestee-info"
+                name="arrestee-info"
+                value={formData["arrestee_info"]}
+                onChange={handleInputChange}
+              />
+            </div>
             <div>
               <Label htmlFor="jail-location">JAIL Location:</Label>
               <Input
@@ -305,47 +327,28 @@ export function RiversideCountySheriffForm({ id }: { id: string }) {
             <Label>
               Probable Cause Hearing NOT required for the following reasons:
             </Label>
-            <div className="flex space-x-4 mt-2">
+            <RadioGroup
+              className="flex space-x-4 mt-2"
+              onValueChange={(value) => {
+                handleInputChange({
+                  target: { name: "probable-cause-radio", value },
+                });
+              }}
+              value={formData["probable-cause-radio"]}
+            >
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="arrest-warrant"
-                  name="arrest-warrant"
-                  checked={formData["arrest-warrant"]}
-                  onCheckedChange={(checked) =>
-                    handleInputChange({
-                      target: { name: "arrest-warrant", checked },
-                    })
-                  }
-                />
+                <RadioGroupItem id="arrest-warrant" value="arrest-warrant" />
                 <Label htmlFor="arrest-warrant">Arrest Warrant</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="bench-warrant"
-                  name="bench-warrant"
-                  checked={formData["bench-warrant"]}
-                  onCheckedChange={(checked) => {
-                    handleInputChange({
-                      target: { name: "bench-warrant", checked },
-                    });
-                  }}
-                />
+                <RadioGroupItem id="bench-warrant" value="bench-warrant" />
                 <Label htmlFor="bench-warrant">Bench Warrant</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="parole-hold"
-                  name="parole-hold"
-                  checked={formData["parole-hold"]}
-                  onCheckedChange={(checked) => {
-                    handleInputChange({
-                      target: { name: "parole-hold", checked },
-                    });
-                  }}
-                />
+                <RadioGroupItem id="parole-hold" value="parole-hold" />
                 <Label htmlFor="parole-hold">Parole Hold</Label>
               </div>
-            </div>
+            </RadioGroup>
           </div>
 
           <div className="space-y-4">
@@ -420,18 +423,25 @@ export function RiversideCountySheriffForm({ id }: { id: string }) {
 
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="additional-info"
-              checked={additionalInfo}
-              onCheckedChange={(checked) =>
-                setAdditionalInfo(checked as boolean)
-              }
+              id="additional_page_checkbox"
+              name="additional_page_checkbox"
+              checked={formData.additional_page_checkbox}
+              onCheckedChange={(checked) => {
+                handleInputChange({
+                  target: {
+                    name: "additional_page_checkbox",
+                    checked,
+                    type: "checkbox",
+                  },
+                });
+              }}
             />
             <Label htmlFor="additional-info">
               Additional information on the 2nd page. (Two Page Limit).
             </Label>
           </div>
 
-          {additionalInfo && (
+          {formData["additional-info-text"] && (
             <div>
               <Label htmlFor="additional-info-text">
                 Additional Information:

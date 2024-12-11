@@ -2,6 +2,7 @@ export interface RiversideCountySheriffFormData {
   // Basic Information
   "jail-location": string;
   arrestee: string;
+  arrestee_info: string;
   dob: string;
   "agency-case": string;
   booking: string;
@@ -25,9 +26,7 @@ export interface RiversideCountySheriffFormData {
   reason: string;
 
   // Warrant Information
-  "arrest-warrant": boolean;
-  "bench-warrant": boolean;
-  "parole-hold": boolean;
+  "probable-cause-radio": "arrest-warrant" | "bench-warrant" | "parole-hold";
 
   // Victim Information
   "victim-age": string;
@@ -37,6 +36,9 @@ export interface RiversideCountySheriffFormData {
   // Contraband Information
   contraband: string;
   quantity: string;
+
+  // Additional Information
+  additional_page_checkbox: boolean;
 
   // Probable Cause
   "probable-cause": string;

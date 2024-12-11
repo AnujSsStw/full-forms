@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as http from "../http.js";
 import type * as init from "../init.js";
 import type * as mutation from "../mutation.js";
 import type * as pc from "../pc.js";
@@ -29,6 +30,7 @@ import type * as shared from "../shared.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  http: typeof http;
   init: typeof init;
   mutation: typeof mutation;
   pc: typeof pc;
