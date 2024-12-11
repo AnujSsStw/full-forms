@@ -105,12 +105,12 @@ export function RiversideCountySheriffForm({
   const debouncedCause = useDebouncedCallback(async (value) => {
     try {
       await updateCauseEntry({ id, data: value });
+      console.info("Cause updated:", value);
     } catch (error) {
       console.log(value);
-
       console.error("Error updating cause:", error);
     }
-  }, 1000);
+  }, 500);
 
   const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;

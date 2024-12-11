@@ -10,7 +10,7 @@ export const getAllBookings = query({
 
 export const getAllCause = query({
   handler: async (ctx) => {
-    return await ctx.db.query("cause").collect();
+    return await ctx.db.query("cause").order("desc").collect();
   },
 });
 
