@@ -12,6 +12,9 @@ export default async function BookingFormPage({
       `https://healthy-kangaroo-437.convex.site/get-data/${params.id}`,
       {
         cache: "no-store",
+        next: {
+          revalidate: 0,
+        },
       }
     )
   ).json();
