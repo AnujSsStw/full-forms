@@ -41,107 +41,8 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { PenaltyQueryResult } from "@/convex/pc";
 import { Search } from "lucide-react";
-import { fillPdfForm } from "./p";
-
-interface BookingFormState {
-  // Personal Information
-  arrest_time: string;
-  booking_date: string;
-  booking_number: string;
-  last_name: string;
-  first_name: string;
-  middle_name: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  home_telephone: string;
-  military_status: "true" | "false" | "";
-  sex: "male" | "female" | "other" | "";
-  race: string;
-  dob: string;
-  age: string;
-  height: string;
-  weight: string;
-  hair: string;
-  eyes: string;
-  place_of_birth: string;
-
-  // Identification
-  drivers_license: string;
-  dl_state: string;
-  ssn: string;
-
-  // Employment
-  employer: string;
-  occupation: string;
-
-  // Additional Information
-  other_names: string;
-  tattoos_scars_marks: string;
-
-  // Emergency Contact
-  emergency_contact: string;
-  emergency_relationship: string;
-  emergency_address: string;
-  emergency_phone: string;
-
-  // Arrest Details
-  arrest_agency: string;
-  agency_case_number: string;
-  arrest_location: string;
-  vehicle_disposition: string;
-  arresting_officer_id: string;
-  transporting_officer_id: string;
-  type_of_arrest: "on-view" | "warrent" | "citizen" | "other" | "";
-
-  // Victim Notification
-  victim_notification: boolean;
-
-  // Medical and Safety
-  suicidal_behavior: boolean;
-  vehicle_accident: boolean;
-  lost_consciousness: boolean;
-  non_law_enforcement: boolean;
-  special_housing_needs: boolean;
-  ok_to_book: boolean;
-  suicidal_behavior_explanation: string;
-
-  // Wrap Restraint
-  wrap_restraint: boolean;
-  wrap_restraint_force: boolean;
-  wrap_restraint_time_placed: string;
-  wrap_restraint_time_removed: string;
-  wrap_restraint_jail_transport: boolean;
-
-  // Release Information
-  citation_release_denied: boolean;
-  approving_supervisor: string;
-  citation_release_reason: string;
-  or_release_recommended: boolean;
-  notify_arresting_agency: boolean;
-  notification_contact: string;
-
-  // Consular Notification
-  consular_notification_time: string;
-  consular_notification_who_contacted: string;
-  consular_notification_by_whom: string;
-  consular_notification_type: "mandatory" | "requested" | "";
-  consular_notification_country: string;
-  consular_notification_made_by: string;
-
-  // Officers
-  arresting_officer: string;
-  booking_officer: string;
-
-  // Billing Information
-  on_sight: string;
-  agency_case_number_billing: string;
-  riverside_warrant_number: string;
-  originative_police_agency: string;
-  reviewed_by: string;
-  send_bill_to: string;
-}
+import { fillBookingForm } from "./p";
+import { BookingFormState, FormEntry } from "@/types/forms";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -155,8 +56,8 @@ const defaultFormState: BookingFormState = {
   state: "",
   zip: "",
   home_telephone: "",
-  military_status: "",
-  sex: "",
+  military_status: "false",
+  sex: "other",
   race: "",
   dob: "",
   age: "",
@@ -182,7 +83,7 @@ const defaultFormState: BookingFormState = {
   vehicle_disposition: "",
   arresting_officer_id: "",
   transporting_officer_id: "",
-  type_of_arrest: "",
+  type_of_arrest: "other",
   victim_notification: false,
   suicidal_behavior: false,
   vehicle_accident: false,
@@ -190,7 +91,9 @@ const defaultFormState: BookingFormState = {
   non_law_enforcement: false,
   special_housing_needs: false,
   ok_to_book: false,
-  suicidal_behavior_explanation: "",
+  did_tased: false,
+  miscellaneous_explanation: "",
+  was_arrested_wrap: false,
   wrap_restraint: false,
   wrap_restraint_force: false,
   wrap_restraint_time_placed: "",
@@ -199,13 +102,14 @@ const defaultFormState: BookingFormState = {
   citation_release_denied: false,
   approving_supervisor: "",
   citation_release_reason: "",
+  or_release_reason: "",
   or_release_recommended: false,
   notify_arresting_agency: false,
   notification_contact: "",
   consular_notification_time: "",
   consular_notification_who_contacted: "",
   consular_notification_by_whom: "",
-  consular_notification_type: "",
+  consular_notification_type: "mandatory",
   consular_notification_country: "",
   consular_notification_made_by: "",
   arresting_officer: "",
@@ -217,16 +121,6 @@ const defaultFormState: BookingFormState = {
   reviewed_by: "",
   send_bill_to: "",
 };
-
-interface FormEntry {
-  id: number;
-  charges: string;
-  mf: string;
-  narrative: string;
-  court: string;
-  warrantNumber: string;
-  bail: string;
-}
 
 export function BookingForm({
   id,
@@ -288,8 +182,9 @@ export function BookingForm({
   }, 1000);
 
   const debouncedBooking = useDebouncedCallback(async (value) => {
+    console.log("updating booking", value);
     await updateBookingEntry({ id, data: value, includeCharges: false });
-  }, 1000);
+  }, 500);
 
   const addEntry = async () => {
     if (!newEntry.charges) return;
@@ -340,22 +235,32 @@ export function BookingForm({
     setPenalCode([]);
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    console.log("submitting form", formData, entries);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log("handleSubmit", formData, entries);
+    const pdfbytes = await fillBookingForm({
+      charges: entries,
+      formData,
+    });
+    if (!pdfbytes) return;
 
-    const form = formRef.current;
-    if (form) {
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
+    const blob = new Blob([pdfbytes], { type: "application/pdf" });
 
-      console.log(data);
-      console.log(
-        "https://healthy-kangaroo-437.convex.cloud/api/storage/b220244c-0754-4b56-bc7a-4dacb1b2226f"
-      );
+    // Create a URL for the blob
+    const url = URL.createObjectURL(blob);
 
-      // fillPdfForm(pdfUrl, data);
-    }
+    // Create a temporary link element
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `cause-form-${formData["arrest_agency"] || "download"}.pdf`; // Set the filename
+
+    // Append to document, click, and cleanup
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -1078,10 +983,10 @@ export function BookingForm({
               </div>
             </div>
 
-            {/* Medical and Safety Concerns */}
+            {/* Miscellaneous */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">
-                Medical and Safety Concerns
+                Miscellaneous Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
@@ -1124,25 +1029,6 @@ export function BookingForm({
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="lost_consciousness"
-                    name="lost_consciousness"
-                    checked={formData.lost_consciousness}
-                    onCheckedChange={(checked) =>
-                      handleInputChange({
-                        target: {
-                          name: "lost_consciousness",
-                          type: "checkbox",
-                          checked,
-                        },
-                      })
-                    }
-                  />
-                  <Label htmlFor="lost_consciousness">
-                    Did arrestee ever lose consciousness?
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
                     id="non_law_enforcement"
                     name="non_law_enforcement"
                     checked={formData.non_law_enforcement}
@@ -1158,6 +1044,25 @@ export function BookingForm({
                   />
                   <Label htmlFor="non_law_enforcement">
                     Fought with other than Law Enforcement?
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="lost_consciousness"
+                    name="lost_consciousness"
+                    checked={formData.lost_consciousness}
+                    onCheckedChange={(checked) =>
+                      handleInputChange({
+                        target: {
+                          name: "lost_consciousness",
+                          type: "checkbox",
+                          checked,
+                        },
+                      })
+                    }
+                  />
+                  <Label htmlFor="lost_consciousness">
+                    Did arrestee ever lose consciousness?
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -1198,15 +1103,47 @@ export function BookingForm({
                     Did arrestee require an O.K. to book?
                   </Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={formData.did_tased}
+                    onCheckedChange={(checked) =>
+                      handleInputChange({
+                        target: {
+                          name: "did_tased",
+                          type: "checkbox",
+                          checked,
+                        },
+                      })
+                    }
+                  />
+                  <Label htmlFor="did_tased">Did arrestee get tased?</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={formData.was_arrested_wrap}
+                    onCheckedChange={(checked) =>
+                      handleInputChange({
+                        target: {
+                          name: "was_arrested_wrap",
+                          type: "checkbox",
+                          checked,
+                        },
+                      })
+                    }
+                  />
+                  <Label htmlFor="was_arrested_wrap">
+                    Was arrestee placed in WRAP Restraint?{" "}
+                  </Label>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="suicidal_behavior_explanation">
+                <Label htmlFor="miscellaneous_explanation">
                   Explanation (if yes)
                 </Label>
                 <Textarea
-                  id="suicidal_behavior_explanation"
-                  name="suicidal_behavior_explanation"
-                  value={formData.suicidal_behavior_explanation}
+                  id="miscellaneous_explanation"
+                  name="miscellaneous_explanation"
+                  value={formData.miscellaneous_explanation}
                   onChange={handleInputChange}
                 />
               </div>
@@ -1218,7 +1155,7 @@ export function BookingForm({
                 Wrap Restraint Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <Checkbox
                     id="wrap_restraint"
                     name="wrap_restraint"
@@ -1236,7 +1173,7 @@ export function BookingForm({
                   <Label htmlFor="wrap_restraint">
                     Was arrestee placed in WRAP Restraint?
                   </Label>
-                </div>
+                </div> */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="wrap_restraint_force"
@@ -1368,11 +1305,11 @@ export function BookingForm({
                   </Label>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="citation_release_reason">Reason Denied</Label>
+                  <Label htmlFor="or_release_reason">Reason Denied</Label>
                   <Textarea
-                    value={formData.citation_release_reason}
-                    id="citation_release_reason"
-                    name="citation_release_reason"
+                    value={formData.or_release_reason}
+                    id="or_release_reason"
+                    name="or_release_reason"
                     onChange={handleInputChange}
                   />
                 </div>
@@ -1510,24 +1447,22 @@ export function BookingForm({
               <h3 className="text-lg font-semibold">Officers</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="approving_supervisor">
-                    Arresting Officer
-                  </Label>
+                  <Label htmlFor="arresting_officer">Arresting Officer</Label>
                   <Input
                     value={formData.arresting_officer}
                     type="text"
-                    id="approving_supervisor"
-                    name="approving_supervisor"
+                    id="arresting_officer"
+                    name="arresting_officer"
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reviewed_by">Booking Officer</Label>
+                  <Label htmlFor="booking_officer">Booking Officer</Label>
                   <Input
                     value={formData.booking_officer}
                     type="text"
-                    id="reviewed_by"
-                    name="reviewed_by"
+                    id="booking_officer"
+                    name="booking_officer"
                     onChange={handleInputChange}
                   />
                 </div>
@@ -1541,34 +1476,36 @@ export function BookingForm({
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="approving_supervisor">On-sight</Label>
+                  <Label htmlFor="on_sight">On-sight</Label>
                   <Input
-                    value={formData.approving_supervisor}
+                    value={formData.on_sight}
                     type="text"
-                    id="approving_supervisor"
-                    name="approving_supervisor"
+                    name="on_sight"
+                    id="on_sight"
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reviewed_by">Agency Case Number</Label>
+                  <Label htmlFor="agency_case_number_billing">
+                    Agency Case Number
+                  </Label>
                   <Input
-                    value={formData.reviewed_by}
+                    value={formData.agency_case_number_billing}
                     type="text"
-                    id="reviewed_by"
-                    name="reviewed_by"
+                    name="agency_case_number_billing"
+                    id="agency_case_number_billing"
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="send_bill_to">
+                  <Label htmlFor="riverside_warrant_number">
                     Riverside County Warrant Number
                   </Label>
                   <Input
-                    value={formData.send_bill_to}
+                    value={formData.riverside_warrant_number}
                     type="text"
-                    id="send_bill_to"
-                    name="send_bill_to"
+                    id="riverside_warrant_number"
+                    name="riverside_warrant_number"
                     onChange={handleInputChange}
                   />
                 </div>
@@ -1585,24 +1522,22 @@ export function BookingForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="originative_police_agency">Reviewed by</Label>
+                  <Label htmlFor="reviewed_by">Reviewed by</Label>
                   <Input
-                    value={formData.originative_police_agency}
+                    value={formData.reviewed_by}
+                    name="reviewed_by"
+                    id="reviewed_by"
                     type="text"
-                    id="originative_police_agency"
-                    name="originative_police_agency"
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="originative_police_agency">
-                    Send Bill to
-                  </Label>
+                  <Label htmlFor="send_bill_to">Send Bill to</Label>
                   <Input
-                    value={formData.originative_police_agency}
+                    name="send_bill_to"
+                    id="send_bill_to"
+                    value={formData.send_bill_to}
                     type="text"
-                    id="originative_police_agency"
-                    name="originative_police_agency"
                     onChange={handleInputChange}
                   />
                 </div>
