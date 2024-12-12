@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { BookingFormState, FormEntry } from "@/types/forms";
 import { PDFDocument } from "pdf-lib";
 import dayjs from "dayjs";
@@ -164,13 +163,17 @@ export async function fillBookingForm(data: {
     // allFields.arrest_time.setText("14:30");
     // allFields.booking_number.setText("BKG78910");
     // arrest_time is a time field, so we need to split the date and time
-    const datetime = dayjs(data.formData.arrest_time);
-    const bookingDatetime = dayjs(data.formData.booking_date_time);
+    const arrest_datetime = dayjs(data.formData.arrest_time);
+    const bookingDatetime = dayjs(data.formData.booking_date);
     allFields.booking_date_time.setText(
-      bookingDatetime.format("MM/DD/YYYY HH:mm")
+      data.formData.booking_date !== ""
+        ? bookingDatetime.format("MM/DD/YYYY HH:mm")
+        : ""
     );
-    allFields.arrest_date.setText(datetime.format("MM/DD/YYYY"));
-    allFields.arrest_time.setText(datetime.format("HH:mm"));
+    if (data.formData.arrest_time !== "") {
+      allFields.arrest_date.setText(arrest_datetime.format("MM/DD/YYYY"));
+      allFields.arrest_time.setText(arrest_datetime.format("HH:mm"));
+    }
     allFields.booking_number.setText(data.formData.booking_number);
 
     // allFields.defendant_information.setText("John Doe");
@@ -275,11 +278,17 @@ export async function fillBookingForm(data: {
     data.charges.forEach((charge, i) => {
       if (i > 4) return;
       const row = i + 1;
+      // @ts-ignore
       allFields[`charges_row${row}`].setText(charge.charges);
+      // @ts-ignore
       allFields[`mf_row${row}`].setText(charge.mf);
+      // @ts-ignore
       allFields[`narrative${row}`].setText(charge.narrative);
+      // @ts-ignore
       allFields[`court${row}`].setText(charge.court);
+      // @ts-ignore
       allFields[`warrant${row}`].setText(charge.warrantNumber);
+      // @ts-ignore
       allFields[`bail${row}`].setText(charge.bail);
     });
 
@@ -385,9 +394,11 @@ export async function fillBookingForm(data: {
     allFields.person_24_hr_phone.setText(data.formData.notification_contact);
     // allFields.arresting_agency_to_be_notified.setText(data.formData.arresting_agency);
     const consolutation_date = dayjs(data.formData.consular_notification_time);
-    allFields.arresting_agency_to_be_notified.setText(
-      consolutation_date.format("MM/DD/YYYY HH:mm")
-    );
+    if (data.formData.consular_notification_time !== "") {
+      allFields.arresting_agency_to_be_notified.setText(
+        consolutation_date.format("MM/DD/YYYY HH:mm")
+      );
+    }
     allFields.who_was_contacted.setText(
       data.formData.consular_notification_who_contacted
     );
