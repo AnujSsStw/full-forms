@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 export const createBooking = mutation({
   handler: async (ctx) => {
@@ -47,6 +48,38 @@ export const createCause = mutation({
     return await ctx.db.insert("cause", {
       data: {},
     });
+  },
+});
+
+export const createCauseWithBooking = mutation({
+  args: {
+    bookingId: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, { bookingId, data }) => {
+    const c = await ctx.db.get(bookingId as Id<"booking">);
+    if (!c) {
+      throw new Error("Booking not found");
+    }
+    if (c.causeId) {
+      console.info("Cause already exists for booking", bookingId);
+      ctx.runMutation(api.mutation.updateCause, {
+        id: c.causeId,
+        data,
+      });
+      return;
+    }
+    const causeId = await ctx.db.insert("cause", {
+      data: {
+        ...data,
+      },
+    });
+
+    await ctx.db.patch(bookingId as Id<"booking">, {
+      causeId,
+    });
+
+    return;
   },
 });
 

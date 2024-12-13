@@ -31,14 +31,15 @@ const defaultFormState: RiversideCountySheriffFormData = {
   "facility-fax": "",
 
   // Counts and Violations
-  "count-1": "",
-  "count-2": "",
-  "count-3": "",
-  "count-4": "",
-  "violation-1": "",
-  "violation-2": "",
-  "violation-3": "",
-  "violation-4": "",
+  charges: [],
+  // "count-1": "",
+  // "count-2": "",
+  // "count-3": "",
+  // "count-4": "",
+  // "violation-1": "",
+  // "violation-2": "",
+  // "violation-3": "",
+  // "violation-4": "",
 
   // Arrest Details
   "arresting-agency": "",
@@ -92,6 +93,7 @@ export function RiversideCountySheriffForm({
   const [formData, setFormData] =
     useState<RiversideCountySheriffFormData>(defaultFormState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   const updateCauseEntry = useMutation(api.mutation.updateCause);
   // const causeForm = useQuery(api.query.getBookingById, { id });
@@ -99,8 +101,9 @@ export function RiversideCountySheriffForm({
   useEffect(() => {
     if (data) {
       setFormData((p) => ({ ...p, ...data.data }));
+      setMounted(true);
     }
-  }, []);
+  }, [data]);
 
   const debouncedCause = useDebouncedCallback(async (value) => {
     try {
@@ -110,19 +113,22 @@ export function RiversideCountySheriffForm({
       console.log(value);
       console.error("Error updating cause:", error);
     }
-  }, 500);
+  }, 1000);
+
+  if (!mounted) return <p>Loading...</p>;
 
   const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === "checkbox" ? checked : value;
 
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData((prevData) => {
+      const newData = {
+        ...prevData,
+        [name]: newValue,
+      };
 
-    debouncedCause({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      debouncedCause(newData);
+      return newData;
     });
   };
 
@@ -241,9 +247,23 @@ export function RiversideCountySheriffForm({
                 <Input
                   id={`count-${count}`}
                   name={`count-${count}`}
-                  // @ts-ignore
-                  value={formData[`count-${count}`]}
-                  onChange={handleInputChange}
+                  value={formData.charges[count - 1]?.count || ""}
+                  onChange={(e) => {
+                    const { name, value } = e.target;
+                    setFormData((prevData) => {
+                      const newCharges = [...prevData.charges];
+                      newCharges[count - 1] = {
+                        ...newCharges[count - 1],
+                        count: value,
+                      };
+
+                      debouncedCause({
+                        ...prevData,
+                        charges: newCharges,
+                      });
+                      return { ...prevData, charges: newCharges };
+                    });
+                  }}
                 />
               </div>
               <div>
@@ -251,9 +271,23 @@ export function RiversideCountySheriffForm({
                 <Input
                   id={`violation-${count}`}
                   name={`violation-${count}`}
-                  // @ts-ignore
-                  value={formData[`violation-${count}`]}
-                  onChange={handleInputChange}
+                  value={formData.charges[count - 1]?.violation || ""}
+                  onChange={((count) => (e) => {
+                    const { name, value } = e.target;
+                    setFormData((prevData) => {
+                      const newCharges = [...prevData.charges];
+                      newCharges[count - 1] = {
+                        ...newCharges[count - 1],
+                        violation: value,
+                      };
+
+                      debouncedCause({
+                        ...prevData,
+                        charges: newCharges,
+                      });
+                      return { ...prevData, charges: newCharges };
+                    });
+                  })(count)}
                 />
               </div>
             </div>
@@ -521,6 +555,7 @@ export function RiversideCountySheriffForm({
                   target: { name: "probable_cause_determination", value },
                 });
               }}
+              disabled
               value={formData.probable_cause_determination}
             >
               <div className="flex items-center space-x-2">

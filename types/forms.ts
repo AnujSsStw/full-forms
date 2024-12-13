@@ -9,14 +9,18 @@ export interface RiversideCountySheriffFormData {
   "facility-fax": string;
 
   // Counts and Violations (1-4)
-  "count-1": string;
-  "count-2": string;
-  "count-3": string;
-  "count-4": string;
-  "violation-1": string;
-  "violation-2": string;
-  "violation-3": string;
-  "violation-4": string;
+  charges: Array<{
+    count: string;
+    violation: string;
+  }>;
+  // "count-1": string;
+  // "count-2": string;
+  // "count-3": string;
+  // "count-4": string;
+  // "violation-1": string;
+  // "violation-2": string;
+  // "violation-3": string;
+  // "violation-4": string;
 
   // Arrest Details
   "arresting-agency": string;

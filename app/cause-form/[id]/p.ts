@@ -1,5 +1,6 @@
+import { fillFormFieldWithFittedText } from "@/app/booking-form/[id]/p";
 import { RiversideCountySheriffFormData } from "@/types/forms";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 
 export async function fillCauseForm(data: RiversideCountySheriffFormData) {
   try {
@@ -29,14 +30,25 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     form.getTextField("Booking #").setText(data["booking"]);
     form.getTextField("Facility / Fax").setText(data["facility-fax"]);
 
-    form.getTextField("Count1").setText(data["count-1"]);
-    form.getTextField("Violation Alleged1").setText(data["violation-1"]);
-    form.getTextField("Count2").setText(data["count-2"]);
-    form.getTextField("Violation Alleged2").setText(data["violation-2"]);
-    form.getTextField("Count3").setText(data["count-3"]);
-    form.getTextField("Violation Alleged3").setText(data["violation-3"]);
-    form.getTextField("Count4").setText(data["count-4"]);
-    form.getTextField("Violation Alleged4").setText(data["violation-4"]);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    data.charges.forEach((charge, i) => {
+      form.getTextField(`Count${i + 1}`).setText(charge.count);
+      fillFormFieldWithFittedText(
+        form.getTextField(`Violation Alleged${i + 1}`),
+        charge.violation,
+        font
+      );
+      // form.getTextField(`Violation Alleged${i + 1}`).setText(charge.violation);
+    });
+
+    // form.getTextField("Count1").setText(data["count-1"]);
+    // form.getTextField("Violation Alleged1").setText(data["violation-1"]);
+    // form.getTextField("Count2").setText(data["count-2"]);
+    // form.getTextField("Violation Alleged2").setText(data["violation-2"]);
+    // form.getTextField("Count3").setText(data["count-3"]);
+    // form.getTextField("Violation Alleged3").setText(data["violation-3"]);
+    // form.getTextField("Count4").setText(data["count-4"]);
+    // form.getTextField("Violation Alleged4").setText(data["violation-4"]);
 
     form.getTextField("Arresting Agency").setText(data["arresting-agency"]);
     form.getTextField("Date").setText(data["arrest-date"]);
@@ -44,7 +56,12 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     form
       .getRadioGroup("Group1")
       .select(data["recommended"] === "yes" ? "Choice1" : "Choice2"); // 1 and 2 are the options
-    form.getTextField("Reason").setText(data["reason"]);
+    fillFormFieldWithFittedText(
+      form.getTextField("Reason"),
+      data["reason"],
+      font
+    );
+    // form.getTextField("Reason").setText(data["reason"]);
 
     // probable cause for hearing
     let r = "Choice1";
@@ -79,7 +96,7 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     form.getTextField("Agency Fax").setText(data["agency-fax"]);
     form.getTextField("Print Name").setText(data["print-name"]);
 
-    form.getRadioGroup("Group3").select("Choice1"); // 1-2
+    // form.getRadioGroup("Group3").select("Choice1"); // 1-2
 
     let r2 = "Choice1";
     if (data.probable_cause_determination === "is-not") {

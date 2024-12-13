@@ -1,5 +1,11 @@
 import { BookingFormState, FormEntry } from "@/types/forms";
-import { PDFDocument } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFFont,
+  PDFForm,
+  PDFTextField,
+  StandardFonts,
+} from "pdf-lib";
 import dayjs from "dayjs";
 
 export async function fillBookingForm(data: {
@@ -203,13 +209,11 @@ export async function fillBookingForm(data: {
     // allFields.drivers_license.setText("123456789");
     // allFields.group1.select("Choice2");
     // allFields.dlstate.setText("Chicago");
-    allFields.defendant_information.setText(
-      data.formData.last_name +
-        ", " +
-        data.formData.first_name +
-        ", " +
-        data.formData.middle_name
-    );
+    const fullName =
+      `${data.formData.last_name} ${data.formData.first_name} ${data.formData.middle_name}`
+        .trim()
+        .replace(/ /g, ", ");
+    allFields.defendant_information.setText(fullName);
     allFields.street.setText(data.formData.street);
     allFields.city.setText(data.formData.city);
     allFields.state.setText(data.formData.state);
@@ -275,17 +279,28 @@ export async function fillBookingForm(data: {
     // allFields.warrant1.setText("123456");
     // allFields.bail1.setText("1000");
 
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     data.charges.forEach((charge, i) => {
       if (i > 4) return;
       const row = i + 1;
+
       // @ts-ignore
       allFields[`charges_row${row}`].setText(charge.charges);
       // @ts-ignore
       allFields[`mf_row${row}`].setText(charge.mf);
+      fillFormFieldWithFittedText(
+        // @ts-ignore
+        allFields[`narrative${row}`],
+        charge.narrative,
+        font
+      );
       // @ts-ignore
-      allFields[`narrative${row}`].setText(charge.narrative);
-      // @ts-ignore
-      allFields[`court${row}`].setText(charge.court);
+      fillFormFieldWithFittedText(
+        // @ts-ignore
+        allFields[`court${row}`],
+        charge.court,
+        font
+      );
       // @ts-ignore
       allFields[`warrant${row}`].setText(charge.warrantNumber);
       // @ts-ignore
@@ -338,7 +353,9 @@ export async function fillBookingForm(data: {
     // allFields.reviewed_by.setText("Officer Smith");
     // allFields.send_bill_to.setText("Acme Inc.");
     allFields.on_sight.setText(data.formData.on_sight);
-    allFields.agency_case_number_2.setText(data.formData.agency_case_number);
+    allFields.agency_case_number_2.setText(
+      data.formData.agency_case_number_billing
+    );
     allFields.riverside_county_warrant_number.setText(
       data.formData.riverside_warrant_number
     );
@@ -435,4 +452,53 @@ export async function fillBookingForm(data: {
   } catch (err) {
     console.error("Error:", err);
   }
+}
+
+function getFittedFontSize(
+  text: string,
+  font: PDFFont,
+  maxWidth: number,
+  maxHeight: number,
+  startSize: number = 12
+): number {
+  let fontSize = startSize;
+
+  // Binary search for the right font size
+  let minSize = 1;
+  let maxSize = startSize;
+
+  while (minSize <= maxSize) {
+    fontSize = Math.floor((minSize + maxSize) / 2);
+
+    const width = font.widthOfTextAtSize(text, fontSize);
+    const height = font.heightAtSize(fontSize);
+
+    if (width <= maxWidth && height <= maxHeight) {
+      // Text fits, try a larger size
+      minSize = fontSize + 1;
+    } else {
+      // Text too big, try a smaller size
+      maxSize = fontSize - 1;
+    }
+  }
+
+  // Return the largest size that fits
+  return maxSize;
+}
+
+export function fillFormFieldWithFittedText(
+  field: PDFTextField,
+  text: string,
+  font: PDFFont,
+  maxFontSize: number = 12
+) {
+  // Get field dimensions
+  const { width, height } = field.acroField.getWidgets()[0].getRectangle();
+
+  // Calculate the optimal font size
+  const fontSize = getFittedFontSize(text, font, width, height, maxFontSize);
+
+  // Set the field text with calculated font size
+  field.setText(text);
+  field.setFontSize(fontSize);
 }

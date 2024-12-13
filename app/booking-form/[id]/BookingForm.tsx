@@ -43,7 +43,7 @@ import { PenaltyQueryResult } from "@/convex/pc";
 import { Search } from "lucide-react";
 import { fillBookingForm } from "./p";
 import { BookingFormState, FormEntry } from "@/types/forms";
-import { flatMap } from "async";
+import { Doc } from "@/convex/_generated/dataModel";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -123,12 +123,49 @@ const defaultFormState: BookingFormState = {
   send_bill_to: "",
 };
 
+const formatSSN = (input: string) => {
+  const digits = input.replace(/\D/g, "");
+  const parts = [digits.slice(0, 3), digits.slice(3, 5), digits.slice(5, 9)];
+  return parts.filter(Boolean).join("-");
+};
+
+const formatHeight = (input: string) => {
+  // Remove all non-digit characters
+  const digits = input.replace(/\D/g, "");
+
+  if (digits.length === 0) {
+    return "";
+  } else if (digits.length <= 1) {
+    return digits + "'";
+  } else {
+    return digits.slice(0, -2) + "'" + digits.slice(-2) + '"';
+  }
+};
+// RIVERSIDE, LARSON, SOUTHWEST, BANNING, BLYTHE
+const COURTS = ["RIVERSIDE", "LARSON", "SOUTHWEST", "BANNING", "BLYTHE"];
+// BANNING,BLYTHE,CABAZON,HEMET,JURUPA VALLEY ,LAKE ELSINORE,MORENO VALLEY,NORCO,PALM DESERT,PERRIS,SAN JACINTO,SOUTHWEST,THERMAL
+const ARRESTING_AGENCY = [
+  "BANNING",
+  "BLYTHE",
+  "CABAZON",
+  "HEMET",
+  "JURUPA VALLEY",
+  "LAKE ELSINORE",
+  "MORENO VALLEY",
+  "NORCO",
+  "PALM DESERT",
+  "PERRIS",
+  "SAN JACINTO",
+  "SOUTHWEST",
+  "THERMAL",
+];
+
 export function BookingForm({
   id,
   bookingForm,
 }: {
   id: string;
-  bookingForm: any;
+  bookingForm: Doc<"booking">;
 }) {
   const [formData, setFormData] = useState<BookingFormState>(defaultFormState);
   const [entries, setEntries] = useState<FormEntry[]>([]);
@@ -153,13 +190,15 @@ export function BookingForm({
   // }).slice(0, 10)
   const [searchTerm, setSearchTerm] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   const q = useAction(api.pc.getPenalty);
   const updateBookingEntry = useMutation(api.mutation.updateBooking);
   // const pdfUrl = useQuery(api.query.getBookingPdf);
+  const createCause = useMutation(api.mutation.createCauseWithBooking);
 
   useEffect(() => {
-    if (bookingForm?.data && defaultFormState === formData) {
+    if (bookingForm.data && defaultFormState === formData) {
       setFormData({
         ...defaultFormState,
         ...bookingForm.data,
@@ -168,6 +207,8 @@ export function BookingForm({
       if (bookingForm.charges) {
         setEntries(bookingForm.charges);
       }
+
+      setMounted(true);
     }
   }, [bookingForm]);
 
@@ -185,10 +226,12 @@ export function BookingForm({
   const debouncedBooking = useDebouncedCallback(
     async (value, includeCharges) => {
       console.log("updating booking", value);
-      await updateBookingEntry({ id, data: value, includeCharges: false });
+      await updateBookingEntry({ id, data: value, includeCharges });
     },
     500
   );
+
+  if (!mounted) return <p>Loading...</p>;
 
   const addEntry = async () => {
     if (!newEntry.charges) return;
@@ -273,7 +316,7 @@ export function BookingForm({
     // Create a temporary link element
     const link = document.createElement("a");
     link.href = url;
-    link.download = `cause-form-${formData["arrest_agency"] || "download"}.pdf`; // Set the filename
+    link.download = `booking-form-${formData["arrest_agency"] || "download"}.pdf`; // Set the filename
 
     // Append to document, click, and cleanup
     document.body.appendChild(link);
@@ -282,6 +325,30 @@ export function BookingForm({
 
     // Clean up the URL object
     URL.revokeObjectURL(url);
+
+    // form the entries create 4 objects of like this "count-1": string;"violation-1": string;
+    const charges = entries.map((entry, idx) => {
+      if (idx > 3) return;
+      return {
+        count: entry.charges,
+        violation: entry.narrative,
+      };
+    });
+    await createCause({
+      bookingId: id,
+      data: {
+        arrestee:
+          formData.first_name + " " + formData.middle_name + formData.last_name,
+        dob: formData.dob,
+        "agency-case": formData.agency_case_number,
+        "arresting-agency": formData.arrest_agency,
+        "arrest-date": formData.arrest_time.split("T")[0],
+        "arrest-time": formData.arrest_time.split("T")[1],
+        recommended: formData.or_release_recommended ? "yes" : "no",
+        reason: formData.or_release_reason,
+        charges,
+      },
+    });
   };
 
   return (
@@ -473,13 +540,40 @@ export function BookingForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="race">Race</Label>
-                  <Input
+                  <Select
+                    onValueChange={(value) =>
+                      handleInputChange({ target: { name: "race", value } })
+                    }
+                    value={formData.race}
+                  >
+                    <SelectTrigger id="race">
+                      <SelectValue placeholder="Select race" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="white">White</SelectItem>
+                      <SelectItem value="black">
+                        Black or African American
+                      </SelectItem>
+                      <SelectItem value="asian">Asian</SelectItem>
+                      <SelectItem value="hispanic">
+                        Hispanic or Latino
+                      </SelectItem>
+                      <SelectItem value="native">
+                        Native American or Alaska Native
+                      </SelectItem>
+                      <SelectItem value="pacific">
+                        Native Hawaiian or Other Pacific Islander
+                      </SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {/* <Input
                     type="text"
                     id="race"
                     name="race"
                     value={formData.race}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dob">Date of Birth</Label>
@@ -488,7 +582,28 @@ export function BookingForm({
                     id="dob"
                     name="dob"
                     value={formData.dob}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      // handleInputChange(e);
+                      // set the age
+                      const dob = new Date(e.target.value);
+                      const today = new Date();
+                      const age = today.getFullYear() - dob.getFullYear();
+                      // setFormData((prevData) => ({
+                      //   ...prevData,
+                      //   age: age.toString(),
+                      // }));
+
+                      setFormData((prevData) => {
+                        const newData = {
+                          ...prevData,
+                          dob: e.target.value,
+                          age: age.toString(),
+                        };
+
+                        debouncedBooking(newData, false);
+                        return newData;
+                      });
+                    }}
                   />
                 </div>
               </div>
@@ -506,12 +621,24 @@ export function BookingForm({
                 <div className="space-y-2">
                   <Label htmlFor="height">Height</Label>
                   <Input
+                    id="height"
+                    value={formatHeight(formData.height)}
+                    onChange={(e) => {
+                      const formattedHeight = formatHeight(e.target.value);
+                      handleInputChange({
+                        target: { name: "height", value: formattedHeight },
+                      });
+                    }}
+                    placeholder="5'10&quot;"
+                    maxLength={6}
+                  />
+                  {/* <Input
                     type="text"
                     id="height"
                     name="height"
                     value={formData.height}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight</Label>
@@ -525,25 +652,66 @@ export function BookingForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="hair">Hair Color</Label>
-                  <Input
-                    type="text"
+                  <Select
+                    value={formData.hair || "other"}
+                    onValueChange={(value) =>
+                      handleInputChange({
+                        target: { name: "hair", value },
+                      })
+                    }
+                  >
+                    <SelectTrigger id="hairColor">
+                      <SelectValue placeholder="Select hair color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="black">Black</SelectItem>
+                      <SelectItem value="brown">Brown</SelectItem>
+                      <SelectItem value="blonde">Blonde</SelectItem>
+                      <SelectItem value="red">Red</SelectItem>
+                      <SelectItem value="gray">Gray</SelectItem>
+                      <SelectItem value="white">White</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* <Input type="text"
                     id="hair"
                     name="hair"
                     value={formData.hair}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="eyes">Eye Color</Label>
-                  <Input
+                  <Select
+                    onValueChange={(value) =>
+                      handleInputChange({
+                        target: { name: "eyes", value },
+                      })
+                    }
+                    value={formData.eyes}
+                  >
+                    <SelectTrigger id="eyeColor">
+                      <SelectValue placeholder="Select eye color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="brown">Brown</SelectItem>
+                      <SelectItem value="blue">Blue</SelectItem>
+                      <SelectItem value="green">Green</SelectItem>
+                      <SelectItem value="hazel">Hazel</SelectItem>
+                      <SelectItem value="gray">Gray</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {/* <Input
                     type="text"
                     id="eyes"
                     name="eyes"
                     value={formData.eyes}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="place_of_birth">Place of Birth</Label>
@@ -585,12 +753,25 @@ export function BookingForm({
                 <div className="space-y-2">
                   <Label htmlFor="ssn">SSN</Label>
                   <Input
+                    id="ssn"
+                    value={formatSSN(formData.ssn)}
+                    onChange={(e) => {
+                      const formattedSSN = formatSSN(e.target.value);
+                      handleInputChange({
+                        target: { name: "ssn", value: formattedSSN },
+                      });
+                    }}
+                    placeholder="555-55-5555"
+                    maxLength={11}
+                  />
+
+                  {/* <Input
                     type="text"
                     id="ssn"
                     name="ssn"
                     value={formData.ssn}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
@@ -699,13 +880,32 @@ export function BookingForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="arrest_agency">Arrest Agency</Label>
-                  <Input
+                  <Select
+                    onValueChange={(value) => {
+                      handleInputChange({
+                        target: { name: "arrest_agency", value },
+                      });
+                    }}
+                    value={formData.arrest_agency}
+                  >
+                    <SelectTrigger id="arrest_agency">
+                      <SelectValue placeholder="Select Arrest Agency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ARRESTING_AGENCY.map((agency) => (
+                        <SelectItem key={agency} value={agency}>
+                          {agency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {/* <Input
                     type="text"
                     id="arrest_agency"
                     name="arrest_agency"
                     value={formData.arrest_agency}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="agency_case_number">Agency Case Number</Label>
@@ -937,13 +1137,30 @@ export function BookingForm({
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <Select
+                          onValueChange={(value) =>
+                            updateNewEntry("court", value)
+                          }
+                        >
+                          <SelectTrigger id="court">
+                            <SelectValue placeholder="Select court" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COURTS.map((court) => (
+                              <SelectItem key={court} value={court}>
+                                {court}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {/* <Input
                           value={newEntry.court}
                           onChange={(e) =>
                             updateNewEntry("court", e.target.value)
                           }
                           placeholder="Court"
-                        />
+                        /> */}
                       </TableCell>
                       <TableCell>
                         <Input

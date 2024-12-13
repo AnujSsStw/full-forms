@@ -17,6 +17,7 @@ export default defineSchema({
   booking: defineTable({
     data: v.any(),
     charges: v.array(v.any()),
+    causeId: v.optional(v.id("cause")),
   }),
   cause: defineTable({
     data: v.any(),

@@ -8,6 +8,7 @@ import { useMutation, useQueries, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { AwardIcon, Trash } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function IndexBookingPage() {
   const [entries, setEntries] = useState([]);
@@ -67,6 +68,17 @@ export default function IndexBookingPage() {
                     <p>
                       Arresting Officer:{" "}
                       {entry.data.arresting_officer || "not yet set"}
+                    </p>
+                    <p>
+                      {entry.causeId ? (
+                        <Badge>
+                          <Link href={`/cause-form/${entry.causeId}`}>
+                            DECLARATION Form Created
+                          </Link>
+                        </Badge>
+                      ) : (
+                        <Badge>DECLARATION Form not yet Created</Badge>
+                      )}
                     </p>
                   </Link>
                   <Button

@@ -69,7 +69,11 @@ export default function IndexCausePage() {
                         "en-US"
                       )}
                     </div>
-                    {JSON.stringify(entry, null, 2)}
+                    <h1 className="text-2xl">
+                      Agency case no.{" "}
+                      {entry.data["agency-case"] || "not yet set"}
+                    </h1>
+                    <p>Arrestee: {entry.data["arrestee"] || "not yet set"}</p>
                   </div>
                   <Button
                     onClick={async () => {
