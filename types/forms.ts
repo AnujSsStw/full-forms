@@ -148,7 +148,7 @@ export interface BookingFormState {
   consular_notification_by_whom: string;
 
   // Consular Notification
-  consular_notification_type: "mandatory" | "requested";
+  consular_notification_type: "mandatory" | "requested" | "";
   consular_notification_country: string;
   consular_notification_made_by: string;
 

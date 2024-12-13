@@ -205,9 +205,9 @@ export async function fillBookingForm(data: {
     // allFields.dlstate.setText("Chicago");
     allFields.defendant_information.setText(
       data.formData.last_name +
-        " " +
+        ", " +
         data.formData.first_name +
-        " " +
+        ", " +
         data.formData.middle_name
     );
     allFields.street.setText(data.formData.street);
@@ -410,16 +410,20 @@ export async function fillBookingForm(data: {
     // allFields.name_id_person_making.setText("fjaklfjl");
     // allFields.arresting_officer.setText("JOeee");
     // allFields.booking_officer.setText("Officer Smith");
-    allFields.group3.select(
-      data.formData.consular_notification_type === "mandatory"
-        ? "Choice1"
-        : "Choice2"
-    );
-    allFields.group4.select(
-      data.formData.consular_notification_type === "mandatory"
-        ? "Choice1"
-        : "Choice2"
-    );
+    if (data.formData.consular_notification_type !== "") {
+      allFields.group3.select(
+        data.formData.consular_notification_type === "mandatory"
+          ? "Choice1"
+          : "Choice2"
+      );
+
+      // TODO: Fix this
+      // allFields.group4.select(
+      //   data.formData.consular_notification_type === "mandatory"
+      //     ? "Choice1"
+      //     : "Choice2"
+      // );
+    }
     allFields.country.setText(data.formData.consular_notification_country);
     allFields.name_id_person_making.setText(
       data.formData.consular_notification_made_by

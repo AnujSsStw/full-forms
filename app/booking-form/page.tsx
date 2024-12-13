@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,20 +50,25 @@ export default function IndexBookingPage() {
           {!getAllBookings ? (
             <p>Loading...</p>
           ) : (
-            <div>
+            <div className="">
               {getAllBookings.map((entry) => (
                 <div
                   key={entry._id}
-                  className="p-4 border rounded  flex justify-between items-center"
+                  className="p-4 mb-3 border rounded flex justify-between items-center gap-3"
                 >
-                  <div
-                    className="cursor-pointer"
-                    onClick={() => {
-                      router.push(`/booking-form/${entry._id}`);
-                    }}
+                  <Link
+                    href={`/booking-form/${entry._id}`}
+                    // className="cursor-pointer"
+                    // onClick={() => {}}
                   >
-                    {JSON.stringify(entry, null, 2)}
-                  </div>
+                    <h1 className="text-2xl">
+                      Case no. {entry.data.agency_case_number || "not yet set"}
+                    </h1>
+                    <p>
+                      Arresting Officer:{" "}
+                      {entry.data.arresting_officer || "not yet set"}
+                    </p>
+                  </Link>
                   <Button
                     onClick={async () => {
                       await deleteBooking({

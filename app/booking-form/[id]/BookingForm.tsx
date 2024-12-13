@@ -43,6 +43,7 @@ import { PenaltyQueryResult } from "@/convex/pc";
 import { Search } from "lucide-react";
 import { fillBookingForm } from "./p";
 import { BookingFormState, FormEntry } from "@/types/forms";
+import { flatMap } from "async";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -109,7 +110,7 @@ const defaultFormState: BookingFormState = {
   consular_notification_time: "",
   consular_notification_who_contacted: "",
   consular_notification_by_whom: "",
-  consular_notification_type: "mandatory",
+  consular_notification_type: "",
   consular_notification_country: "",
   consular_notification_made_by: "",
   arresting_officer: "",
@@ -158,17 +159,17 @@ export function BookingForm({
   // const pdfUrl = useQuery(api.query.getBookingPdf);
 
   useEffect(() => {
-    if (bookingForm?.data) {
+    if (bookingForm?.data && defaultFormState === formData) {
       setFormData({
         ...defaultFormState,
         ...bookingForm.data,
       });
 
-      if (bookingForm.data.entries) {
-        setEntries(bookingForm.data.entries);
+      if (bookingForm.charges) {
+        setEntries(bookingForm.charges);
       }
     }
-  }, []);
+  }, [bookingForm]);
 
   useEffect(() => {
     if (searchTerm.length < 3 && queryByCode === false) return;
@@ -181,14 +182,21 @@ export function BookingForm({
     setPenalCode(data);
   }, 1000);
 
-  const debouncedBooking = useDebouncedCallback(async (value) => {
-    console.log("updating booking", value);
-    await updateBookingEntry({ id, data: value, includeCharges: false });
-  }, 500);
+  const debouncedBooking = useDebouncedCallback(
+    async (value, includeCharges) => {
+      console.log("updating booking", value);
+      await updateBookingEntry({ id, data: value, includeCharges: false });
+    },
+    500
+  );
 
   const addEntry = async () => {
     if (!newEntry.charges) return;
-    setEntries([...entries, newEntry]);
+    setEntries((p) => {
+      const newEntries = [...p, newEntry];
+      debouncedBooking({ charges: newEntries }, true);
+      return newEntries;
+    });
     setNewEntry({
       id: Date.now(),
       charges: "",
@@ -199,27 +207,40 @@ export function BookingForm({
       bail: "",
     });
 
-    await updateBookingEntry({ id, data: newEntry, includeCharges: true });
+    // await updateBookingEntry({ id, data: newEntry, includeCharges: true });
   };
 
   const updateNewEntry = (key: keyof FormEntry, value: string) => {
-    setNewEntry({ ...newEntry, [key]: value });
+    setNewEntry((p) => {
+      const newEntry = {
+        ...p,
+        [key]: value,
+      };
+      // debouncedBooking({ charges: [newEntry] }, true);
+      return newEntry;
+    });
   };
 
   const removeEntry = (id: number) => {
-    setEntries(entries.filter((entry) => entry.id !== id));
+    setEntries((p) => {
+      const newEntries = p.filter((entry) => entry.id !== id);
+      debouncedBooking({ charges: newEntries }, true);
+      return newEntries;
+    });
   };
 
   const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const newValue = type === "checkbox" ? checked : value;
 
-    debouncedBooking({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
+    setFormData((prevData) => {
+      const newData = {
+        ...prevData,
+        [name]: newValue,
+      };
+
+      debouncedBooking(newData, false);
+      return newData;
     });
   };
 

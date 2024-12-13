@@ -18,14 +18,9 @@ export const updateBooking = mutation({
     includeCharges: v.boolean(),
   },
   handler: async (ctx, { id, data }) => {
-    const d = await ctx.db.get(id as Id<"booking">);
-    if (!d) {
-      throw new Error("Booking not found");
-    }
-
     if (data.charges) {
       await ctx.db.patch(id as Id<"booking">, {
-        charges: [...d.charges, data],
+        charges: data.charges,
       });
       return;
     }
