@@ -235,7 +235,10 @@ export async function fillBookingForm(data: {
     allFields.phone_2.setText(data.formData.emergency_phone);
     allFields.tattoos_scars_marks.setText(data.formData.tattoos_scars_marks);
     allFields.sex.setText(data.formData.sex);
-    allFields.dob.setText(data.formData.dob);
+    // dob in the form is in MM/DD/YYYY format
+    const dob = dayjs(data.formData.dob);
+    allFields.dob.setText(dob.format("MM/DD/YYYY"));
+    // allFields.dob.setText(data.formData.dob);
     allFields.drivers_license.setText(data.formData.drivers_license);
     allFields.race.setText(data.formData.race);
     allFields.dlstate.setText(data.formData.dl_state);

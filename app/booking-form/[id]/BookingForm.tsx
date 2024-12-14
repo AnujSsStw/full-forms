@@ -158,7 +158,8 @@ const ARRESTING_AGENCY = [
   "SAN JACINTO",
   "SOUTHWEST",
   "THERMAL",
-];
+  "SBI",
+].map((v) => `RSO / ${v}`);
 
 export function BookingForm({
   id,
@@ -330,15 +331,14 @@ export function BookingForm({
     const charges = entries.map((entry, idx) => {
       if (idx > 3) return;
       return {
-        count: entry.charges,
-        violation: entry.narrative,
+        count: idx + 1,
+        violation: entry.charges,
       };
     });
     await createCause({
       bookingId: id,
       data: {
-        arrestee:
-          formData.first_name + " " + formData.middle_name + formData.last_name,
+        arrestee: formData.last_name + ", " + formData.first_name,
         dob: formData.dob,
         "agency-case": formData.agency_case_number,
         "arresting-agency": formData.arrest_agency,

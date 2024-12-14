@@ -1,6 +1,7 @@
 import { fillFormFieldWithFittedText } from "@/app/booking-form/[id]/p";
 import { RiversideCountySheriffFormData } from "@/types/forms";
 import { PDFDocument, StandardFonts } from "pdf-lib";
+import dayjs from "dayjs";
 
 export async function fillCauseForm(data: RiversideCountySheriffFormData) {
   try {
@@ -25,7 +26,8 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     form.getTextField("Arrest Information").setText(data.arrestee_info);
     form.getTextField("Jail Location").setText(data["jail-location"]);
     form.getTextField("Arrestee").setText(data.arrestee);
-    form.getTextField("DOB").setText(data.dob);
+    const dob = dayjs(data.dob);
+    form.getTextField("DOB").setText(dob.format("MM/DD/YYYY"));
     form.getTextField("Agency Case#").setText(data["agency-case"]);
     form.getTextField("Booking #").setText(data["booking"]);
     form.getTextField("Facility / Fax").setText(data["facility-fax"]);

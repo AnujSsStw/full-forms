@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +18,13 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useDebouncedCallback } from "use-debounce";
 import { fillCauseForm } from "./p";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
@@ -74,7 +80,7 @@ const defaultFormState: RiversideCountySheriffFormData = {
 
   // Determination
   probable_cause_determination: "is",
-  probable_cause_belief: "exists",
+  probable_cause_belief: "",
 
   // Magistrate Information
   "magistrate-date": "",
@@ -82,6 +88,9 @@ const defaultFormState: RiversideCountySheriffFormData = {
   "magistrate-signature": "",
   "by-direction": "",
 };
+
+// Blythe,Cois M.,JBDC,Larry D.,RPDC
+const JAILS = ["Blythe", "Cois M.", "JBDC", "Larry D.", "RPDC"];
 
 export function RiversideCountySheriffForm({
   id,
@@ -185,6 +194,23 @@ export function RiversideCountySheriffForm({
             </div>
             <div>
               <Label htmlFor="jail-location">JAIL Location:</Label>
+              <Select
+                value={formData["jail-location"]}
+                onValueChange={(value) => {
+                  handleInputChange({
+                    target: { name: "jail-location", value },
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Jail" />
+                </SelectTrigger>
+                <SelectContent>
+                  {JAILS.map((jail) => (
+                    <SelectItem value={jail}>{jail}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Input
                 id="jail-location"
                 name="jail-location"
@@ -616,6 +642,7 @@ export function RiversideCountySheriffForm({
                 });
               }}
               defaultValue="exists"
+              disabled
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="exists" id="exists" />

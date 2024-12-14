@@ -56,7 +56,7 @@ export interface RiversideCountySheriffFormData {
 
   // Determination
   probable_cause_determination: "is" | "is-not";
-  probable_cause_belief: "exists" | "exists-augmented" | "not-shown";
+  probable_cause_belief: "exists" | "exists-augmented" | "not-shown" | "";
 
   // Magistrate Information
   "magistrate-date": string;
