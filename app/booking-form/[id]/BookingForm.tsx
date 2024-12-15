@@ -158,7 +158,7 @@ const ARRESTING_AGENCY = [
   "SAN JACINTO",
   "SOUTHWEST",
   "THERMAL",
-  "SBI",
+  "SIB",
 ].map((v) => `RSO / ${v}`);
 
 export function BookingForm({
@@ -384,8 +384,7 @@ export function BookingForm({
                     value={formData.arrest_time}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="booking_date">Booking Date</Label>
+                {/* <div className="space-y-2"> <Label htmlFor="booking_date">Booking Date</Label>
                   <Input
                     type="datetime-local"
                     id="booking_date"
@@ -393,8 +392,8 @@ export function BookingForm({
                     value={formData.booking_date}
                     onChange={handleInputChange}
                   />
-                </div>
-                <div className="space-y-2">
+                </div> */}
+                {/* <div className="space-y-2">
                   <Label htmlFor="booking_number">Booking Number</Label>
                   <Input
                     type="text"
@@ -403,7 +402,7 @@ export function BookingForm({
                     value={formData.booking_number}
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -1694,7 +1693,7 @@ export function BookingForm({
                     onChange={handleInputChange}
                   />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="booking_officer">Booking Officer</Label>
                   <Input
                     value={formData.booking_officer}
@@ -1703,12 +1702,12 @@ export function BookingForm({
                     name="booking_officer"
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 
             {/* Approval and Billing */}
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
               <h3 className="text-lg font-semibold">
                 Billing Information (For Business Office Use Only)
               </h3>
@@ -1780,7 +1779,7 @@ export function BookingForm({
                   />
                 </div>
               </div>
-            </div>
+            </div> */}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full">

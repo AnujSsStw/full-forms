@@ -42,11 +42,11 @@ export interface RiversideCountySheriffFormData {
   quantity: string;
 
   // Additional Information
-  additional_page_checkbox: boolean;
+  // additional_page_checkbox: boolean;
 
   // Probable Cause
   "probable-cause": string;
-  "additional-info-text"?: string;
+  // "additional-info-text"?: string;
 
   // Declaration Information
   "declarant-signature": string;
@@ -55,7 +55,7 @@ export interface RiversideCountySheriffFormData {
   "print-name": string;
 
   // Determination
-  probable_cause_determination: "is" | "is-not";
+  probable_cause_determination: "is" | "is-not" | "";
   probable_cause_belief: "exists" | "exists-augmented" | "not-shown" | "";
 
   // Magistrate Information

@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 export async function fillCauseForm(data: RiversideCountySheriffFormData) {
   try {
     const response = await fetch(
-      "https://healthy-kangaroo-437.convex.cloud/api/storage/ea94a37f-398c-4eec-8129-55e081a090a5"
+      "https://healthy-kangaroo-437.convex.cloud/api/storage/a5f4803a-47dd-4bec-a2aa-8fd830a5f510"
     );
     const pdfBytes = await response.arrayBuffer();
 
@@ -34,7 +34,7 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     data.charges.forEach((charge, i) => {
-      form.getTextField(`Count${i + 1}`).setText(charge.count);
+      form.getTextField(`Count${i + 1}`).setText(charge.count.toString());
       fillFormFieldWithFittedText(
         form.getTextField(`Violation Alleged${i + 1}`),
         charge.violation,
@@ -83,15 +83,43 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     form.getTextField("Contraband").setText(data["contraband"]);
     form.getTextField("Amount of Contraband").setText(data["quantity"]);
 
-    if (!data.additional_page_checkbox) {
-      form.getCheckBox("Additional Info on second page").uncheck();
+    const probableCause = data["probable-cause"];
+    const LIMIT = 400;
+    const doesProbableCauseFit = probableCause.length < LIMIT;
+    if (doesProbableCauseFit) {
+      form.getTextField("Probable Cause").setText(probableCause);
     } else {
+      // Find a suitable splitting point
+      let splitIndex = probableCause.lastIndexOf(".", LIMIT);
+
+      // If no period found before LIMIT characters, fallback to splitting at 200
+      if (splitIndex === -1) {
+        splitIndex = probableCause.indexOf(" ", LIMIT);
+      }
+
+      // If no space is found either, fallback to hard split
+      if (splitIndex === -1) {
+        splitIndex = LIMIT;
+      }
+
+      const firstPart = probableCause.slice(0, splitIndex + 1).trim(); // Include the period or space
+      const secondPart = probableCause.slice(splitIndex + 1).trim();
+
+      form.getTextField("Probable Cause").setText(firstPart);
+      form.getTextField("Probable Cause Page 2").setText(secondPart);
       form.getCheckBox("Additional Info on second page").check();
     }
 
-    form.getTextField("Probable Cause").setText(data["probable-cause"]);
+    // if (!data.additional_page_checkbox) {
+    //   form.getCheckBox("Additional Info on second page").uncheck();
+    // } else {
+    //   form.getCheckBox("Additional Info on second page").check();
+    // }
+
+    // form.getTextField("Probable Cause").setText(data["probable-cause"]);
     form.getTextField("Day and Time of Month").setText(data["magistrate-date"]);
 
+    form.getTextField("digital_signature").setText(data["declarant-signature"]);
     form
       .getTextField("Officer Phone OR Pager")
       .setText(data["arr-officer-phone"]);
@@ -100,18 +128,18 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
 
     // form.getRadioGroup("Group3").select("Choice1"); // 1-2
 
-    let r2 = "Choice1";
-    if (data.probable_cause_determination === "is-not") {
-      r2 = "Choice2";
-    } else if (data.probable_cause_belief === "exists-augmented") {
-      r2 = "Choice3";
-    }
-    form.getRadioGroup("Group4").select(r2); //1-3
+    // let r2 = "Choice1";
+    // if (data.probable_cause_determination === "is-not") {
+    //   r2 = "Choice2";
+    // } else if (data.probable_cause_belief === "exists-augmented") {
+    //   r2 = "Choice3";
+    // }
+    // form.getRadioGroup("Group4").select(r2); //1-3
     form.getTextField("Text1").setText(data["by-direction"]);
 
-    form
-      .getTextField("Probable Cause Page 2")
-      .setText(data["additional-info-text"]);
+    // form
+    //   .getTextField("Probable Cause Page 2")
+    //   .setText(data["additional-info-text"]);
 
     return await pdfDoc.save();
   } catch (err) {

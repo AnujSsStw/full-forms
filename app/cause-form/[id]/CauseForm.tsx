@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ProbableCause } from "./probable-cause";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
@@ -68,9 +69,9 @@ const defaultFormState: RiversideCountySheriffFormData = {
 
   // Probable Cause
   "probable-cause": "",
-  "additional-info-text": "",
+  // "additional-info-text": "",
 
-  additional_page_checkbox: false,
+  // additional_page_checkbox: false,
 
   // Declaration Information
   "declarant-signature": "",
@@ -79,7 +80,7 @@ const defaultFormState: RiversideCountySheriffFormData = {
   "print-name": "",
 
   // Determination
-  probable_cause_determination: "is",
+  probable_cause_determination: "",
   probable_cause_belief: "",
 
   // Magistrate Information
@@ -211,12 +212,12 @@ export function RiversideCountySheriffForm({
                   ))}
                 </SelectContent>
               </Select>
-              <Input
+              {/* <Input
                 id="jail-location"
                 name="jail-location"
                 value={formData["jail-location"]}
                 onChange={handleInputChange}
-              />
+              /> */}
             </div>
             <div>
               <Label htmlFor="arrestee">ARRESTEE:</Label>
@@ -468,7 +469,11 @@ export function RiversideCountySheriffForm({
           </div>
 
           <div>
-            <Label htmlFor="probable-cause">
+            <ProbableCause
+              value={formData["probable-cause"]}
+              handleInputChange={handleInputChange}
+            />
+            {/* <Label htmlFor="probable-cause">
               I deem that there is probable cause to believe that the crime(s)
               as described have been committed by the arrestee:
             </Label>
@@ -478,10 +483,22 @@ export function RiversideCountySheriffForm({
               className="mt-2"
               value={formData["probable-cause"]}
               onChange={handleInputChange}
-            />
+              rows={10}
+            /> */}
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div>
+            <Button
+              onClick={() => {
+                alert("still working on this feature");
+              }}
+              type="button"
+            >
+              Suggest
+            </Button>
+          </div>
+
+          {/* <div className="flex items-center space-x-2">
             <Checkbox
               id="additional_page_checkbox"
               name="additional_page_checkbox"
@@ -499,9 +516,9 @@ export function RiversideCountySheriffForm({
             <Label htmlFor="additional-info">
               Additional information on the 2nd page. (Two Page Limit).
             </Label>
-          </div>
+          </div> */}
 
-          {formData["additional_page_checkbox"] && (
+          {/* {formData["additional_page_checkbox"] && (
             <div>
               <Label htmlFor="additional-info-text">
                 Additional Information:
@@ -515,7 +532,7 @@ export function RiversideCountySheriffForm({
                 onChange={handleInputChange}
               />
             </div>
-          )}
+          )} */}
 
           <div className="space-y-4">
             <p>
@@ -568,7 +585,7 @@ export function RiversideCountySheriffForm({
               </div>
             </div>
           </div>
-
+          {/* 
           <div className="space-y-4">
             <p>
               On the basis of the foregoing Declaration, I hereby determine that
@@ -673,7 +690,7 @@ export function RiversideCountySheriffForm({
               value={formData["by-direction"]}
               onChange={handleInputChange}
             />
-          </div>
+          </div> */}
         </CardContent>
       </Card>
 
