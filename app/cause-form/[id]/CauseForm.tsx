@@ -1,11 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Card,
   CardContent,
@@ -13,11 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { RiversideCountySheriffFormData } from "@/types/forms";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useDebouncedCallback } from "use-debounce";
-import { fillCauseForm } from "./p";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -25,8 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProbableCause, SignatureGenerator } from "./probable-cause";
-import SignatureInput from "@/components/ui/signature-input";
+import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/convex/_generated/api";
+import { RiversideCountySheriffFormData } from "@/types/forms";
+import { useMutation } from "convex/react";
+import { useEffect, useRef, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
+import { fillCauseForm } from "./p";
+import { ProbableCause } from "./probable-cause";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
