@@ -117,7 +117,7 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     // }
 
     // form.getTextField("Probable Cause").setText(data["probable-cause"]);
-    form.getTextField("Day and Time of Month").setText(data["magistrate-date"]);
+    form.getTextField("Day and Time of Month").setText(data["executedOn"]);
 
     form.getTextField("digital_signature").setText(data["declarant-signature"]);
     form

@@ -44,6 +44,8 @@ export interface RiversideCountySheriffFormData {
   // Additional Information
   // additional_page_checkbox: boolean;
 
+  executedOn: string;
+
   // Probable Cause
   "probable-cause": string;
   // "additional-info-text"?: string;

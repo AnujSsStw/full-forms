@@ -250,3 +250,91 @@ function ModelItem({
     </CommandItem>
   );
 }
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { RefreshCcw } from "lucide-react";
+import { useState } from "react";
+
+export const SignatureGenerator = () => {
+  const [text, setText] = useState("John Doe");
+  const [seed, setSeed] = useState(0);
+
+  // Generate points for the signature path
+  const generateSignaturePath = (text, seed) => {
+    const points = [];
+    const length = text.length;
+    const height = 60;
+    const width = Math.min(length * 30, 400);
+
+    // Base line
+    let x = 20;
+    let y = height / 2;
+    points.push(`M ${x} ${y}`);
+
+    // Use text characteristics to influence the path
+    for (let i = 0; i < length; i++) {
+      const char = text.charCodeAt(i);
+      const angle = (((char + seed) % 360) * Math.PI) / 180;
+
+      // Create flowing curves based on character codes
+      x += width / length;
+      y = height / 2 + Math.sin(angle) * (height / 4);
+
+      if (i === 0) {
+        points.push(`C ${x - 10} ${y - 10}, ${x - 5} ${y + 10}, ${x} ${y}`);
+      } else {
+        const control1X = x - width / (length * 2) + Math.cos(angle) * 20;
+        const control1Y = y + Math.sin(angle) * 20;
+        const control2X = x - width / (length * 2) - Math.cos(angle) * 20;
+        const control2Y = y - Math.sin(angle) * 20;
+
+        points.push(
+          `C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${x} ${y}`
+        );
+      }
+    }
+
+    // Add flourish at the end
+    points.push(`q 20 0, 30 ${Math.sin(seed) * 20}`);
+
+    return points.join(" ");
+  };
+
+  return (
+    <Card className="w-full max-w-2xl">
+      <CardContent className="pt-6">
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Enter text for signature"
+              className="flex-1"
+            />
+            <Button
+              onClick={() => setSeed(Math.random() * 1000)}
+              variant="outline"
+              size="icon"
+            >
+              <RefreshCcw className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg border">
+            <svg viewBox="0 0 440 80" className="w-full h-20">
+              <path
+                d={generateSignaturePath(text, seed)}
+                fill="none"
+                stroke="black"
+                strokeWidth="2"
+                className="transition-all duration-300"
+              />
+            </svg>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

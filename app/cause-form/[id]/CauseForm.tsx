@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProbableCause } from "./probable-cause";
+import { ProbableCause, SignatureGenerator } from "./probable-cause";
+import SignatureInput from "@/components/ui/signature-input";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
@@ -67,6 +68,8 @@ const defaultFormState: RiversideCountySheriffFormData = {
   contraband: "",
   quantity: "",
 
+  executedOn: "",
+
   // Probable Cause
   "probable-cause": "",
   // "additional-info-text": "",
@@ -103,6 +106,7 @@ export function RiversideCountySheriffForm({
   const [formData, setFormData] =
     useState<RiversideCountySheriffFormData>(defaultFormState);
   const formRef = useRef<HTMLFormElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mounted, setMounted] = useState(false);
 
   const updateCauseEntry = useMutation(api.mutation.updateCause);
@@ -539,14 +543,32 @@ export function RiversideCountySheriffForm({
               I declare under penalty of perjury that the foregoing is true and
               correct to the best of my information and belief.
             </p>
-            <p>
-              Executed on, in the County of Riverside, State of California by:
+            <p className="flex items-center gap-2">
+              Executed on,
+              <span className="">
+                <Input
+                  id="executedOn"
+                  name="executedOn"
+                  type="date"
+                  value={formData["executedOn"]}
+                  onChange={handleInputChange}
+                  className="w-min"
+                />
+              </span>
+              in the County of Riverside, State of California by:
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="declarant-signature">
                   Declarant's Signature & ID #:
                 </Label>
+                {/* <SignatureInput
+                  canvasRef={canvasRef}
+                  // onSignatureChange={(signature) => {
+                  //   console.log("signature", signature);
+                  // }}
+                  onSignatureChange={(signature) => {}}
+                /> */}
                 <Input
                   id="declarant-signature"
                   name="declarant-signature"
