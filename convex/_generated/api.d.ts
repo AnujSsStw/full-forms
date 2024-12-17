@@ -19,7 +19,6 @@ import type * as mutation from "../mutation.js";
 import type * as pc from "../pc.js";
 import type * as pcSeed from "../pcSeed.js";
 import type * as query from "../query.js";
-import type * as shared from "../shared.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -36,7 +35,6 @@ declare const fullApi: ApiFromModules<{
   pc: typeof pc;
   pcSeed: typeof pcSeed;
   query: typeof query;
-  shared: typeof shared;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

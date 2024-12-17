@@ -13,7 +13,9 @@ export default defineSchema({
       searchField: "narrative",
       filterFields: ["code_number"],
     })
-    .index("by_code_number", ["code_number"]),
+    .searchIndex("search_code_number", {
+      searchField: "code_number",
+    }),
   booking: defineTable({
     data: v.any(),
     charges: v.array(v.any()),

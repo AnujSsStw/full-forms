@@ -15,7 +15,9 @@ export const getPenaltyByCode = internalQuery({
   handler: async (ctx, args): Promise<PenaltyQueryResult> => {
     const data = await ctx.db
       .query("pc")
-      .withIndex("by_code_number", (q) => q.eq("code_number", args.query))
+      .withSearchIndex("search_code_number", (q) =>
+        q.search("code_number", args.query)
+      )
       .take(10);
 
     return data;
