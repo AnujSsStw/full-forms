@@ -46,21 +46,94 @@ export function CauseFormIdSuggestion({
   const sendMessage = useMutation(api.message.send);
   const clearMesages = useMutation(api.message.clear);
 
-  const [expanded, setExpanded] = useState(false);
   const [isScrolled, setScrolled] = useState(false);
 
-  const [input, setInput] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  const handleExpand = () => {
-    setExpanded(!expanded);
-    setScrolled(false);
+  // Sample data - you can replace this with your own data source
+  const tags = ["suggestion", "example"];
+
+  const findMentionStart = (text: string | string[], cursorPos: number) => {
+    let start = cursorPos;
+    while (start > 0 && text[start - 1] !== "@" && text[start - 1] !== " ") {
+      start--;
+    }
+    if (start > 0 && text[start - 1] === "@") {
+      return start - 1;
+    }
+    return -1;
   };
+
+  const handleInputChange = (e: {
+    target: { value: any; selectionStart: any };
+  }) => {
+    const newValue = e.target.value;
+    const newPosition = e.target.selectionStart;
+    setInputValue(newValue);
+    setCursorPosition(newPosition);
+
+    const mentionStart = findMentionStart(newValue, newPosition);
+    if (mentionStart >= 0) {
+      const query = newValue.slice(mentionStart + 1, newPosition).toLowerCase();
+      const filtered = tags.filter((user) =>
+        user.toLowerCase().includes(query)
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const insertMention = (user: string) => {
+    const mentionStart = findMentionStart(inputValue, cursorPosition);
+    if (mentionStart >= 0) {
+      const beforeMention = inputValue.slice(0, mentionStart);
+      const afterMention = inputValue.slice(cursorPosition);
+      const newValue = `${beforeMention}@${user} ${afterMention}`;
+      setInputValue(newValue);
+      setShowSuggestions(false);
+
+      // Focus back on input after selection
+      if (inputRef.current) {
+        inputRef.current?.focus();
+      }
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSuggestions(false);
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
 
   const handleSend = async () => {
     console.log("handleSend");
+    if (inputValue.includes("@suggestion")) {
+      await sendMessage({
+        message: inputValue + data["probable-cause"],
+        sessionId,
+      });
+    } else if (inputValue.includes("@example")) {
+      await sendMessage({
+        message: "write me an example with this data" + inputValue,
+        sessionId,
+      });
+    } else {
+      await sendMessage({ message: inputValue, sessionId });
+    }
 
-    await sendMessage({ message: input, sessionId });
-    setInput("");
+    setInputValue("");
     setScrolled(false);
   };
 
@@ -115,12 +188,7 @@ export function CauseFormIdSuggestion({
                 key={message._id}
                 className={cn(message._id === firstMsgId ? "hidden" : "")}
               >
-                <div
-                  className={
-                    "text-neutral-400 text-sm " +
-                    (message.isViewer && !expanded ? "text-right" : "")
-                  }
-                >
+                <div className={"text-neutral-400 text-sm " + "text-right"}>
                   {message.isViewer ? <>You</> : <>{name}</>}
                 </div>
                 {message.text === "" ? (
@@ -132,9 +200,7 @@ export function CauseFormIdSuggestion({
                       (message.isViewer
                         ? "bg-neutral-200 dark:bg-neutral-800 "
                         : "bg-neutral-100 dark:bg-neutral-900 ") +
-                      (message.isViewer && !expanded
-                        ? "rounded-tr-none"
-                        : "rounded-tl-none")
+                      (message.isViewer ? "rounded-tr-none" : "rounded-tl-none")
                     }
                   >
                     {message.text}
@@ -145,25 +211,45 @@ export function CauseFormIdSuggestion({
           )}
         </div>
         <DialogFooter className="sm:justify-normal">
-          <form className="w-full flex items-center gap-3">
-            <Textarea
-              rows={3}
-              className=""
-              autoFocus
-              name="message"
-              placeholder="Send a message"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-            />
+          <form className="w-full flex items-center gap-3 relative">
+            <div className="flex-1 relative">
+              <Textarea
+                rows={3}
+                className="w-full"
+                autoFocus
+                name="message"
+                placeholder="Send a message or type @ to see options"
+                value={inputValue}
+                onChange={handleInputChange}
+                ref={inputRef}
+              />
+              {showSuggestions && (
+                <div className="absolute left-0 right-0 bottom-full mb-1 border rounded-md shadow-lg max-h-48 overflow-y-auto bg-black">
+                  {suggestions.map((user, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 cursor-pointer hover:bg-gray-950"
+                      onClick={() => insertMention(user)}
+                    >
+                      {user}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={handleSend}
               type="button"
-              disabled={input === ""}
-              className=""
+              disabled={inputValue === ""}
+              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <SendIcon className="w-5 h-5" />
             </button>
-            <button type="button" onClick={() => void handleClearMessages()}>
+            <button
+              type="button"
+              onClick={() => void handleClearMessages()}
+              className="p-2 rounded-md hover:bg-gray-100"
+            >
               <TrashIcon color="red" className="h-5 w-5" />
             </button>
           </form>
