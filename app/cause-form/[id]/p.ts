@@ -1,12 +1,16 @@
 import { fillFormFieldWithFittedText } from "@/app/booking-form/[id]/p";
 import { RiversideCountySheriffFormData } from "@/types/forms";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, PDFTextField, StandardFonts } from "pdf-lib";
 import dayjs from "dayjs";
 
-export async function fillCauseForm(data: RiversideCountySheriffFormData) {
+export async function fillCauseForm(
+  data: RiversideCountySheriffFormData,
+  signatureData: string
+) {
   try {
     const response = await fetch(
-      "https://healthy-kangaroo-437.convex.cloud/api/storage/a5f4803a-47dd-4bec-a2aa-8fd830a5f510"
+      "https://healthy-kangaroo-437.convex.cloud/api/storage/ea94a37f-398c-4eec-8129-55e081a090a5"
+      // "https://healthy-kangaroo-437.convex.cloud/api/storage/a5f4803a-47dd-4bec-a2aa-8fd830a5f510"
     );
     const pdfBytes = await response.arrayBuffer();
 
@@ -121,7 +125,8 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
       .getTextField("Day and Time of Month")
       .setText(dayjs(data["executedOn"]).format("MM/DD/YYYY"));
 
-    form.getTextField("digital_signature").setText(data["declarant-signature"]);
+    // form.getTextField("digital_signature").setText(data["declarant-signature"]);
+    await signature(pdfDoc, signatureData);
     form
       .getTextField("Officer Phone OR Pager")
       .setText(data["arr-officer-phone"]);
@@ -143,8 +148,34 @@ export async function fillCauseForm(data: RiversideCountySheriffFormData) {
     //   .getTextField("Probable Cause Page 2")
     //   .setText(data["additional-info-text"]);
 
-    return await pdfDoc.save();
+    return await pdfDoc.save({
+      updateFieldAppearances: true,
+    });
   } catch (err) {
     console.error("Error:", err);
+  }
+}
+
+async function signature(pdfDoc: PDFDocument, base64Sign: string) {
+  try {
+    // Convert base64 to Uint8Array
+    const signatureData = Buffer.from(base64Sign.split(",")[1], "base64");
+
+    // Embed the PNG signature
+    const signatureImage = await pdfDoc.embedPng(signatureData);
+
+    const pages = pdfDoc.getPages();
+    const page = pages[0];
+
+    // Draw the signature image on the field
+    page.drawImage(signatureImage, {
+      x: 53.428 + 30,
+      y: 349.301 - 10,
+      width: 80,
+      height: 40,
+    });
+  } catch (error) {
+    console.error("Error adding signature:", error);
+    throw error;
   }
 }

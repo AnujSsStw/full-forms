@@ -40,7 +40,7 @@ export function Navigation({}: {}) {
               className="fixed -right-4 min-w-56 bg-card p-2"
             >
               <DropdownMenuItem className="group h-9 w-full cursor-pointer justify-between rounded-md px-2">
-                <Link href={"/settings"}>
+                <Link href="/settings">
                   <span className="text-sm text-primary/60 group-hover:text-primary group-focus:text-primary">
                     Settings
                   </span>

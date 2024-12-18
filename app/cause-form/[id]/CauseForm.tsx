@@ -20,11 +20,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { RiversideCountySheriffFormData } from "@/types/forms";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { fillCauseForm } from "./p";
 import { ProbableCause } from "./probable-cause";
+import { CauseFormIdSuggestion } from "./Suggestion";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
@@ -97,9 +98,11 @@ const JAILS = ["Blythe", "Cois M.", "JBDC", "Larry D.", "RPDC"];
 export function RiversideCountySheriffForm({
   id,
   data,
+  firstMsgId,
 }: {
   id: string;
   data: any;
+  firstMsgId: string;
 }) {
   const [formData, setFormData] =
     useState<RiversideCountySheriffFormData>(defaultFormState);
@@ -108,6 +111,7 @@ export function RiversideCountySheriffForm({
   const [mounted, setMounted] = useState(false);
 
   const updateCauseEntry = useMutation(api.mutation.updateCause);
+  const signatures = useQuery(api.query.getSignature);
   // const causeForm = useQuery(api.query.getBookingById, { id });
 
   useEffect(() => {
@@ -147,7 +151,15 @@ export function RiversideCountySheriffForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("handleSubmit", formData);
-    const pdfbytes = await fillCauseForm(formData);
+
+    const sign = signatures?.find(
+      (sign) => sign._id === formData["declarant-signature"]
+    );
+    if (!sign) {
+      alert("Please select a signature");
+      return;
+    }
+    const pdfbytes = await fillCauseForm(formData, sign.base64Sign);
     if (!pdfbytes) return;
 
     const blob = new Blob([pdfbytes], { type: "application/pdf" });
@@ -490,14 +502,11 @@ export function RiversideCountySheriffForm({
           </div>
 
           <div>
-            <Button
-              onClick={() => {
-                alert("still working on this feature");
-              }}
-              type="button"
-            >
-              Suggest
-            </Button>
+            <CauseFormIdSuggestion
+              data={formData}
+              sessionId={id}
+              firstMsgId={firstMsgId}
+            />
           </div>
 
           {/* <div className="flex items-center space-x-2">
@@ -560,19 +569,29 @@ export function RiversideCountySheriffForm({
                 <Label htmlFor="declarant-signature">
                   Declarant's Signature & ID #:
                 </Label>
-                {/* <SignatureInput
-                  canvasRef={canvasRef}
-                  // onSignatureChange={(signature) => {
-                  //   console.log("signature", signature);
-                  // }}
-                  onSignatureChange={(signature) => {}}
-                /> */}
-                <Input
+                <Select
+                  value={formData["declarant-signature"]}
+                  onValueChange={(value) => {
+                    handleInputChange({
+                      target: { name: "declarant-signature", value },
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Signature" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {signatures?.map((sign) => (
+                      <SelectItem value={sign._id}>{sign.userName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {/* <Input
                   id="declarant-signature"
                   name="declarant-signature"
                   value={formData["declarant-signature"]}
                   onChange={handleInputChange}
-                />
+                /> */}
               </div>
               <div>
                 <Label htmlFor="arr-officer-phone">

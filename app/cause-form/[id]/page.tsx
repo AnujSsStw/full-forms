@@ -20,7 +20,11 @@ export default async function BookingFormPage({
 
   return (
     <main>
-      <RiversideCountySheriffForm id={params.id} data={d} />
+      <RiversideCountySheriffForm
+        id={params.id}
+        data={d}
+        firstMsgId={d.isFirstMsgId}
+      />
     </main>
   );
 }

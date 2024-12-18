@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/tooltip";
 
 import { Button } from "@/components/ui/button";
-import { useDebouncedCallback } from "use-debounce";
 import {
   Card,
   CardContent,
@@ -37,13 +36,14 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
-import { useAction, useMutation, useQuery } from "convex/react";
-import { useEffect, useRef, useState } from "react";
-import { PenaltyQueryResult } from "@/convex/pc";
-import { Search } from "lucide-react";
-import { fillBookingForm } from "./p";
-import { BookingFormState, FormEntry } from "@/types/forms";
 import { Doc } from "@/convex/_generated/dataModel";
+import { PenaltyQueryResult } from "@/convex/pc";
+import { BookingFormState, FormEntry } from "@/types/forms";
+import { useAction, useMutation } from "convex/react";
+import { Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
+import { fillBookingForm } from "./p";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -197,6 +197,7 @@ export function BookingForm({
   const updateBookingEntry = useMutation(api.mutation.updateBooking);
   // const pdfUrl = useQuery(api.query.getBookingPdf);
   const createCause = useMutation(api.mutation.createCauseWithBooking);
+  const addFirstMessage = useMutation(api.message.addMsg);
 
   useEffect(() => {
     if (bookingForm.data && defaultFormState === formData) {
@@ -300,9 +301,7 @@ export function BookingForm({
     setPenalCode([]);
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    console.log("handleSubmit", formData, entries);
+  const printForm = async () => {
     const pdfbytes = await fillBookingForm({
       charges: entries,
       formData,
@@ -326,8 +325,12 @@ export function BookingForm({
 
     // Clean up the URL object
     URL.revokeObjectURL(url);
+  };
 
-    // form the entries create 4 objects of like this "count-1": string;"violation-1": string;
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log("handleSubmit", formData, entries);
+
     const charges = entries.map((entry, idx) => {
       if (idx > 3) return;
       return {
@@ -335,7 +338,7 @@ export function BookingForm({
         violation: entry.charges,
       };
     });
-    await createCause({
+    const cause_id = await createCause({
       bookingId: id,
       data: {
         arrestee: formData.last_name + ", " + formData.first_name,
@@ -349,6 +352,8 @@ export function BookingForm({
         charges,
       },
     });
+
+    await addFirstMessage({ sessionId: cause_id });
   };
 
   return (
@@ -1781,10 +1786,25 @@ export function BookingForm({
               </div>
             </div> */}
           </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full">
-              Submit Booking Form
+          <CardFooter className="flex flex-col">
+            <Button
+              variant={"link"}
+              type="button"
+              onClick={printForm}
+              className=""
+            >
+              Print
             </Button>
+            <div className="w-full flex gap-1">
+              <Button type="submit" className="w-full">
+                Create Cause Form
+              </Button>
+              {/* {bookingForm.causeId && (
+                <Link href={`/cause-form/${bookingForm.causeId}`}>
+                  <ArrowRight className="w-full mt-2 text-blue-500" />
+                </Link>
+              )} */}
+            </div>
           </CardFooter>
         </Card>
       </form>

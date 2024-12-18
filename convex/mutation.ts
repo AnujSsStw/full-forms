@@ -1,7 +1,8 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
 import { api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
+import { internalMutation, mutation } from "./_generated/server";
+import schema from "./schema";
 
 export const createBooking = mutation({
   handler: async (ctx) => {
@@ -67,7 +68,7 @@ export const createCauseWithBooking = mutation({
         id: c.causeId,
         data,
       });
-      return;
+      return c.causeId;
     }
     const causeId = await ctx.db.insert("cause", {
       data: {
@@ -79,7 +80,7 @@ export const createCauseWithBooking = mutation({
       causeId,
     });
 
-    return;
+    return causeId;
   },
 });
 
@@ -103,5 +104,40 @@ export const deleteCause = mutation({
   },
   handler: async (ctx, { id }) => {
     return await ctx.db.delete(id as Id<"cause">);
+  },
+});
+
+export const insertEmbedding = internalMutation({
+  args: schema.tables.calcrim.validator,
+  handler: async (ctx, args) => {
+    await ctx.db.insert("calcrim", {
+      text: args.text,
+      embedding: args.embedding,
+    });
+  },
+});
+
+export const insertSeedData = internalMutation({
+  args: schema.tables.pc.validator,
+  handler: async (ctx, args) => {
+    await ctx.db.insert("pc", {
+      code_number: args.code_number,
+      codeType: args.codeType,
+      narrative: args.narrative,
+      m_f: args.m_f,
+    });
+  },
+});
+
+export const createSignature = mutation({
+  args: {
+    sign: v.string(),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("signature", {
+      base64Sign: args.sign,
+      userName: args.name,
+    });
   },
 });

@@ -23,5 +23,22 @@ export default defineSchema({
   }),
   cause: defineTable({
     data: v.any(),
+    isFirstMsgId: v.optional(v.id("messages")),
+  }),
+  calcrim: defineTable({
+    text: v.string(),
+    embedding: v.array(v.number()),
+  }).vectorIndex("by_embedding", {
+    dimensions: 1536,
+    vectorField: "embedding",
+  }),
+  messages: defineTable({
+    isViewer: v.boolean(),
+    sessionId: v.string(),
+    text: v.string(),
+  }).index("bySessionId", ["sessionId"]),
+  signature: defineTable({
+    base64Sign: v.string(),
+    userName: v.string(),
   }),
 });

@@ -1,23 +1,16 @@
-import { internalAction, internalMutation } from "./_generated/server";
-import schema from "./schema";
-import { PenalCode } from "./pcSeed";
+"use node";
 import { internal } from "./_generated/api";
-
-export const insertSeedData = internalMutation({
-  args: schema.tables.pc.validator,
-  handler: async (ctx, args) => {
-    await ctx.db.insert("pc", {
-      code_number: args.code_number,
-      codeType: args.codeType,
-      narrative: args.narrative,
-      m_f: args.m_f,
-    });
-  },
-});
+import { internalAction, internalMutation } from "./_generated/server";
+import { PenalCode } from "./pcSeed";
+import schema from "./schema";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import OpenAI from "openai";
+// @ts-ignore
+import pdf from "pdf-parse/lib/pdf-parse";
 
 const processBatch = async (ctx: any, batch: any[]) => {
   const batchPromises = batch.map((pc) =>
-    ctx.runMutation(internal.init.insertSeedData, {
+    ctx.runMutation(internal.mutation.insertSeedData, {
       code_number: pc["CODE #"].toString(),
       codeType: pc["CODE TYPE"],
       narrative: pc.NARRATIVE,
@@ -53,3 +46,49 @@ export default internalAction(async (ctx) => {
     `👒 Database has been successfully configured with ${validEntries.length} entries.`
   );
 });
+
+export const embedAll = internalAction({
+  handler: async (ctx) => {
+    try {
+      const response = await fetch(
+        "https://healthy-kangaroo-437.convex.cloud/api/storage/fabbc987-3e14-4d2a-a3af-d38f8a12b62e"
+      );
+      const pdfBytes = await response.arrayBuffer();
+      const pdfData = await pdf(Buffer.from(pdfBytes));
+      const pdfText = pdfData.text;
+
+      const textSplitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 2000,
+        chunkOverlap: 100,
+      });
+      const chunks = await textSplitter.splitText(pdfText);
+
+      const batchPromises = chunks.map((chunk) =>
+        ctx.runAction(internal.embed.addEmbedding, {
+          text: chunk,
+        })
+      );
+      console.info("Processing", batchPromises.length);
+
+      // Wait for all embeddings to complete
+      await Promise.all(batchPromises);
+    } catch (error) {
+      console.error("Error in embedAll:", error);
+      throw error;
+    }
+  },
+});
+
+export async function embedTexts(text: string) {
+  if (!text) return [];
+
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  const { data } = await openai.embeddings.create({
+    input: text,
+    model: "text-embedding-ada-002",
+  });
+
+  return data.map(({ embedding }) => embedding);
+}

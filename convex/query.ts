@@ -28,3 +28,9 @@ export const getBookingPdf = query({
     return await ctx.storage.getUrl("kg264swwfc37ca1wkd5zwccrcs7689cj");
   },
 });
+
+export const getSignature = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("signature").collect();
+  },
+});
