@@ -26,6 +26,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { fillCauseForm } from "./p";
 import { ProbableCause } from "./probable-cause";
 import { CauseFormIdSuggestion } from "./Suggestion";
+import Link from "next/link";
 
 const defaultFormState: RiversideCountySheriffFormData = {
   // Basic Information
@@ -574,6 +575,17 @@ export function RiversideCountySheriffForm({
                     ))}
                   </SelectContent>
                 </Select>
+                <h3 className="text-sm font-normal text-gray-500">
+                  Create your sign{" "}
+                  <Link
+                    className="underline text-gray-500 hover:text-gray-700"
+                    href="/settings"
+                  >
+                    here
+                  </Link>
+                  .
+                </h3>
+
                 {/* <Input
                   id="declarant-signature"
                   name="declarant-signature"
