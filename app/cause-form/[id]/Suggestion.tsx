@@ -7,11 +7,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
-import { SendIcon, TrashIcon } from "lucide-react";
+import { Copy, PlusIcon, SendIcon, TrashIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const welcomeMessage = "Welcome to the Cause Form! How can I help you?";
@@ -19,11 +20,13 @@ const welcomeMessage = "Welcome to the Cause Form! How can I help you?";
 export function CauseFormIdSuggestion({
   data,
   sessionId,
+  handleCauseFom,
   firstMsgId,
 }: {
   data: any;
   sessionId: string;
   firstMsgId: string;
+  handleCauseFom: (e: any) => void;
 }) {
   const remoteMessages = useQuery(api.message.list, { sessionId });
   const messages = useMemo(
@@ -53,6 +56,9 @@ export function CauseFormIdSuggestion({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Sample data - you can replace this with your own data source
   const tags = ["suggestion", "example"];
@@ -144,38 +150,60 @@ export function CauseFormIdSuggestion({
 
   const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isScrolled) {
-      return;
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
-    // Using `setTimeout` to make sure scrollTo works on button click in Chrome
-    setTimeout(() => {
-      listRef.current?.scrollTo({
-        top: listRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 0);
-  }, [messages, isScrolled]);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [isOpen, messages]);
+
+  // useEffect(() => {
+  //   if (isScrolled) {
+  //     return;
+  //   }
+  //   // Using `setTimeout` to make sure scrollTo works on button click in Chrome
+  //   setTimeout(() => {
+  //     listRef.current?.scrollTo({
+  //       top: listRef.current.scrollHeight,
+  //       behavior: "smooth",
+  //     });
+  //   }, 0);
+  // }, [messages, isScrolled]);
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <Button type="button">Suggestions</Button>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button type="button">Probable Cause Analysis</Button>
       </DialogTrigger>
-      <DialogContent className="md:max-w-[70rem] max-w-xl">
+      <DialogContent className="sm:max-w-[425px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] w-[90vw] h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Probable Cause From Helper</DialogTitle>
+          <DialogTitle>Probable Cause Analysis</DialogTitle>
           {/* <DialogDescription>
             This action cannot be undone. This will permanently delete your
             account and remove your data from our servers.
           </DialogDescription> */}
         </DialogHeader>
-        <div
+        {/* <div
           className="flex-grow overflow-scroll gap-2 flex flex-col mx-2 pb-2 rounded-lg h-80"
           ref={listRef}
           onWheel={() => {
             setScrolled(true);
           }}
+        > */}
+        <ScrollArea
+          className="flex-grow px-4 pb-4 space-y-4 border rounded-md"
+          ref={scrollAreaRef}
         >
           {remoteMessages === undefined ? (
             <>
@@ -186,7 +214,10 @@ export function CauseFormIdSuggestion({
             messages.map((message) => (
               <div
                 key={message._id}
-                className={cn(message._id === firstMsgId ? "hidden" : "")}
+                className={cn(
+                  message._id === firstMsgId ? "hidden" : "",
+                  "py-2"
+                )}
               >
                 <div className={"text-neutral-400 text-sm " + "text-right"}>
                   {message.isViewer ? <>You</> : <>{name}</>}
@@ -204,12 +235,37 @@ export function CauseFormIdSuggestion({
                     }
                   >
                     {message.text}
+                    {!message.isViewer && message._id !== "0" && (
+                      <div className="pt-2 flex">
+                        <Button
+                          className="w-8 h-8"
+                          type="button"
+                          variant={"outline"}
+                          onClick={() => {
+                            handleCauseFom(message.text);
+                          }}
+                        >
+                          <PlusIcon />
+                        </Button>
+                        <Button
+                          className="w-8 h-8"
+                          type="button"
+                          variant={"outline"}
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(message.text);
+                          }}
+                        >
+                          <Copy />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             ))
           )}
-        </div>
+        </ScrollArea>
+        {/* </div> */}
         <DialogFooter className="sm:justify-normal">
           <form className="w-full flex items-center gap-3 relative">
             <div className="flex-1 relative">
@@ -224,7 +280,7 @@ export function CauseFormIdSuggestion({
                 ref={inputRef}
               />
               {showSuggestions && (
-                <div className="absolute left-0 right-0 bottom-full mb-1 border rounded-md shadow-lg max-h-48 overflow-y-auto bg-black">
+                <div className="absolute left-0 right-0 bottom-full mb-1 border rounded-md shadow-lg max-h-48 overflow-y-auto bg-white dark:bg-black">
                   {suggestions.map((user, index) => (
                     <div
                       key={index}

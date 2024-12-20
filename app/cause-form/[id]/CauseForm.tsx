@@ -495,6 +495,14 @@ export function RiversideCountySheriffForm({
               data={formData}
               sessionId={id}
               firstMsgId={firstMsgId}
+              handleCauseFom={(data) =>
+                handleInputChange({
+                  target: {
+                    name: "probable-cause",
+                    value: data,
+                  },
+                })
+              }
             />
           </div>
 
