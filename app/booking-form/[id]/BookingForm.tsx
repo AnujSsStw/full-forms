@@ -336,7 +336,7 @@ export function BookingForm({
     // Create a temporary link element
     const link = document.createElement("a");
     link.href = url;
-    link.download = `booking-form-${formData["arrest_agency"] || "download"}.pdf`; // Set the filename
+    link.download = `booking-form-${formData["arrest_agency"] || "download"}-${color === "none" ? "" : color}.pdf`; // Set the filename
 
     // Append to document, click, and cleanup
     document.body.appendChild(link);
@@ -353,14 +353,14 @@ export function BookingForm({
       return;
     }
     if (colorLegend.includes("all")) {
-      COLOR_LEGEND.forEach((color) => {
-        printForm(color.label);
-      });
+      for (const color of COLOR_LEGEND) {
+        await printForm(color.label);
+      }
       return;
     }
-    colorLegend.forEach((color) => {
-      printForm(color);
-    });
+    for (const color of colorLegend) {
+      await printForm(color);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
