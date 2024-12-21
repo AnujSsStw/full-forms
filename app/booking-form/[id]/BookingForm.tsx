@@ -44,6 +44,8 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { fillBookingForm } from "./p";
+import { title } from "process";
+import { cn } from "@/lib/utils";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -192,6 +194,7 @@ export function BookingForm({
   const [searchTerm, setSearchTerm] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [colorLegend, setColorLegend] = useState<string[]>([]);
 
   const q = useAction(api.pc.getPenalty);
   const updateBookingEntry = useMutation(api.mutation.updateBooking);
@@ -301,10 +304,27 @@ export function BookingForm({
     setPenalCode([]);
   };
 
-  const printForm = async () => {
+  const handleColorLegendChange = (check: any, label: string) => {
+    // if (label === "all") {
+    //   if (check) {
+    //     setColorLegend(COLOR_LEGEND.map((v) => v.label));
+    //   } else {
+    //     setColorLegend([]);
+    //   }
+    //   return;
+    // }
+    if (check) {
+      setColorLegend([...colorLegend, label]);
+    } else {
+      setColorLegend(colorLegend.filter((v) => v !== label));
+    }
+  };
+
+  const printForm = async (color: string) => {
     const pdfbytes = await fillBookingForm({
       charges: entries,
       formData,
+      color_legend: color as any,
     });
     if (!pdfbytes) return;
 
@@ -325,6 +345,22 @@ export function BookingForm({
 
     // Clean up the URL object
     URL.revokeObjectURL(url);
+  };
+
+  const printMultipleForms = async () => {
+    if (colorLegend.length === 0) {
+      alert("Please select at least one color legend");
+      return;
+    }
+    if (colorLegend.includes("all")) {
+      COLOR_LEGEND.forEach((color) => {
+        printForm(color.label);
+      });
+      return;
+    }
+    colorLegend.forEach((color) => {
+      printForm(color);
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -1785,15 +1821,60 @@ export function BookingForm({
                 </div>
               </div>
             </div> */}
+
+            {/* color legend */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Color Legend</h3>
+              <div className="items-top flex space-x-2">
+                <Checkbox
+                  id="all"
+                  onCheckedChange={(e) => {
+                    handleColorLegendChange(e, "all");
+                  }}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="all"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Color All Distribution
+                  </label>
+                </div>
+              </div>
+
+              {COLOR_LEGEND.map((color, idx) => (
+                <div className="items-top flex space-x-2" key={idx}>
+                  <Checkbox
+                    id={color.label}
+                    disabled={colorLegend.includes("all") ? true : false}
+                    onCheckedChange={(e) => {
+                      if (colorLegend.includes("all")) return;
+                      handleColorLegendChange(e, color.label);
+                    }}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms2"
+                      className={cn(
+                        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                        color.color === "none" ? "" : color.color
+                      )}
+                    >
+                      {color.title}
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button
               variant={"link"}
               type="button"
-              onClick={printForm}
+              onClick={printMultipleForms}
               className=""
             >
-              Print
+              Print (Checked only)
             </Button>
             <div className="w-full flex gap-1">
               <Button type="submit" className="w-full">
@@ -1811,3 +1892,23 @@ export function BookingForm({
     </>
   );
 }
+
+export const COLOR_LEGEND = [
+  { color: "none", label: "none", title: "Booking File" },
+  {
+    color: "text-green-600",
+    label: "Green",
+    title: "Arresting Officer (RSD only)",
+  },
+  { color: "text-yellow-400", label: "Yellow", title: "Print Room" },
+  {
+    color: "text-pink-600",
+    label: "Pink",
+    title: "Classification/Medical/Billing",
+  },
+  {
+    color: "text-[#daa520]",
+    label: "Goldenrod",
+    title: "Arresting Officer (All)",
+  },
+] as const;

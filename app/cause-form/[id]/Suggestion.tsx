@@ -60,8 +60,7 @@ export function CauseFormIdSuggestion({
   const [isOpen, setIsOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Sample data - you can replace this with your own data source
-  const tags = ["suggestion", "example"];
+  const tags = ["suggestion", "example", "check"];
 
   const findMentionStart = (text: string | string[], cursorPos: number) => {
     let start = cursorPos;
@@ -133,6 +132,13 @@ export function CauseFormIdSuggestion({
     } else if (inputValue.includes("@example")) {
       await sendMessage({
         message: "write me an example with this data" + inputValue,
+        sessionId,
+      });
+    } else if (inputValue.includes("@check")) {
+      await sendMessage({
+        message:
+          "check the data for Legal Standards, Evidence Reliability, Constitutional Requirements, Documentation Quality, Procedural Compliance, Investigative Thoroughness, Specific Crime Elements" +
+          inputValue,
         sessionId,
       });
     } else {

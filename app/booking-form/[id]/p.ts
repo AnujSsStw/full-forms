@@ -3,14 +3,18 @@ import {
   PDFDocument,
   PDFFont,
   PDFForm,
+  PDFPage,
   PDFTextField,
+  rgb,
   StandardFonts,
 } from "pdf-lib";
 import dayjs from "dayjs";
+import { COLOR_LEGEND } from "./BookingForm";
 
 export async function fillBookingForm(data: {
   formData: BookingFormState;
   charges: FormEntry[];
+  color_legend: (typeof COLOR_LEGEND)[number]["label"];
 }) {
   try {
     const response = await fetch(
@@ -451,10 +455,96 @@ export async function fillBookingForm(data: {
     allFields.arresting_officer.setText(data.formData.arresting_officer);
     allFields.booking_officer.setText(data.formData.booking_officer);
 
+    //color legend
+    // highlight the text at x: 98.75635200000002, y: 756.24, width: 61.72697999999996, height: 6.36
+    // y: 756.24 is from top of the page so we need to convert it to bottom
+
+    // x: 169.426128, y: 756.24, width:101.35041600000001, height: 6.36
+
+    // x: 276.218796, y: 756.24, width: 55.45093199999996, height: 6.36
+
+    // x: 340.7708879999999, y: 756.24, width: 96.27386399999993, height: 6.36
+
+    // x: 446.10775199999983, y: 756.24, width: 95.46805199999973, height: 6.36
+
+    const page = pdfDoc.getPages()[0];
+    const Y = 756.24;
+    switch (data.color_legend) {
+      case "none":
+        break;
+      case "Green":
+        highlightText({
+          color: [0, 1, 0],
+          height: 6.36,
+          page,
+          width: 101.35041600000001,
+          x: 169.426128,
+          y: Y,
+        });
+        break;
+      case "Yellow":
+        highlightText({
+          color: [1, 1, 0],
+          height: 6.36,
+          page,
+          width: 55.45093199999996,
+          x: 276.218796,
+          y: Y,
+        });
+        break;
+      case "Pink":
+        highlightText({
+          color: [1, 0, 1],
+          height: 6.36,
+          page,
+          width: 96.27386399999993,
+          x: 340.7708879999999,
+          y: Y,
+        });
+        break;
+      case "Goldenrod":
+        highlightText({
+          color: [1, 0.84, 0],
+          height: 6.36,
+          page,
+          width: 96.27386399999993,
+          x: 446.10775199999983,
+          y: Y,
+        });
+        break;
+    }
+
     return await pdfDoc.save();
   } catch (err) {
     console.error("Error:", err);
   }
+}
+
+function highlightText({
+  color = [1, 0, 0],
+  height,
+  opacity = 0.3,
+  page,
+  width,
+  x,
+  y,
+}: {
+  page: PDFPage;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: [number, number, number];
+  opacity?: number;
+}) {
+  page.drawRectangle({
+    y: page.getHeight() - y,
+    x,
+    width,
+    height,
+    color: rgb(...color),
+    opacity,
+  });
 }
 
 function getFittedFontSize(
