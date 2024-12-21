@@ -353,14 +353,18 @@ export function BookingForm({
       return;
     }
     if (colorLegend.includes("all")) {
-      for (const color of COLOR_LEGEND) {
-        await printForm(color.label);
-      }
+      await Promise.all(
+        COLOR_LEGEND.map(async (color) => await printForm(color.label))
+      );
+      // for (const color of COLOR_LEGEND) {
+      //   await printForm(color.label);
+      // }
       return;
     }
-    for (const color of colorLegend) {
-      await printForm(color);
-    }
+    await Promise.all(colorLegend.map(async (color) => await printForm(color)));
+    // for (const color of colorLegend) {
+    //   await printForm(color);
+    // }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
