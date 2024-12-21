@@ -156,11 +156,14 @@ export function RiversideCountySheriffForm({
     const sign = signatures?.find(
       (sign) => sign._id === formData["declarant-signature"]
     );
-    if (!sign) {
+    if (!sign && formData["declarant-signature"] !== "none") {
       alert("Please select a signature");
       return;
     }
-    const pdfbytes = await fillCauseForm(formData, sign.base64Sign);
+    const pdfbytes = await fillCauseForm(
+      formData,
+      sign?.base64Sign || formData["declarant-signature"]
+    );
     if (!pdfbytes) return;
 
     const blob = new Blob([pdfbytes], { type: "application/pdf" });
@@ -578,6 +581,7 @@ export function RiversideCountySheriffForm({
                     <SelectValue placeholder="Select Signature" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
                     {signatures?.map((sign) => (
                       <SelectItem value={sign._id}>{sign.userName}</SelectItem>
                     ))}

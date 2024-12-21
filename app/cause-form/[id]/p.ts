@@ -126,7 +126,9 @@ export async function fillCauseForm(
       .setText(dayjs(data["executedOn"]).format("MM/DD/YYYY"));
 
     // form.getTextField("digital_signature").setText(data["declarant-signature"]);
-    await signature(pdfDoc, signatureData);
+    if (signatureData && signatureData !== "none") {
+      await signature(pdfDoc, signatureData);
+    }
     form
       .getTextField("Officer Phone OR Pager")
       .setText(data["arr-officer-phone"]);

@@ -3,8 +3,8 @@
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
-import { useTheme } from "next-themes";
+import { useMutation, useQuery } from "convex/react";
+import { Trash } from "lucide-react";
 import { useRef, useState } from "react";
 import {
   default as ReactSignatureCanvas,
@@ -14,8 +14,11 @@ import {
 export default function SettingsPage() {
   const sigPad = useRef<ReactSignatureCanvas>(null);
   const [userName, setUserName] = useState("");
-  const theme = useTheme();
   const createSignature = useMutation(api.mutation.createSignature);
+
+  const allSignatures = useQuery(api.query.getAllSignature);
+  const deleteSignature = useMutation(api.mutation.deleteSignature);
+
   const clear = () => {
     sigPad.current?.clear();
   };
@@ -79,6 +82,41 @@ export default function SettingsPage() {
           >
             Save Signature
           </button>
+        </div>
+      </div>
+
+      <Separator className="w-full" />
+
+      <div>
+        <h3 className="text-lg font-medium">Saved Signatures</h3>
+        <p className="text-sm text-muted-foreground">
+          List of all saved signatures
+        </p>
+
+        <div className="flex flex-col gap-4 p-4">
+          {allSignatures?.map((signature) => (
+            <div
+              key={signature._id}
+              className="flex items-center justify-between p-4  border shadow-lg   rounded-md"
+            >
+              <div>
+                <span className="text-sm font-medium">
+                  {signature.userName}
+                </span>
+                <img
+                  src={signature.base64Sign}
+                  alt={signature.userName}
+                  className="w-36 h-12 bg-white rounded-md"
+                />
+              </div>
+              <button
+                onClick={() => deleteSignature({ id: signature._id })}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                <Trash size={16} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -34,3 +34,9 @@ export const getSignature = query({
     return await ctx.db.query("signature").collect();
   },
 });
+
+export const getAllSignature = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("signature").collect();
+  },
+});

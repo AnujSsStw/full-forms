@@ -141,3 +141,12 @@ export const createSignature = mutation({
     });
   },
 });
+
+export const deleteSignature = mutation({
+  args: {
+    id: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.delete(args.id as Id<"signature">);
+  },
+});
