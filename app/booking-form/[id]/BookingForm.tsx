@@ -43,7 +43,7 @@ import { useAction, useMutation } from "convex/react";
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { fillBookingForm } from "./p";
+import { fillBookingForm, mergePDFs } from "./p";
 import { title } from "process";
 import { cn } from "@/lib/utils";
 
@@ -163,6 +163,34 @@ const ARRESTING_AGENCY = [
   "SIB",
 ].map((v) => `RSO / ${v}`);
 
+const downloadPdf = ({
+  color,
+  pdfbytes,
+  arrest_agency_name,
+}: {
+  pdfbytes: Uint8Array;
+  arrest_agency_name?: string;
+  color: string;
+}) => {
+  const blob = new Blob([pdfbytes], { type: "application/pdf" });
+
+  // Create a URL for the blob
+  const url = URL.createObjectURL(blob);
+
+  // Create a temporary link element
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `booking-form-${arrest_agency_name || "download"}-${color === "none" ? "" : color}.pdf`; // Set the filename
+
+  // Append to document, click, and cleanup
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // Clean up the URL object
+  URL.revokeObjectURL(url);
+};
+
 export function BookingForm({
   id,
   bookingForm,
@@ -254,8 +282,6 @@ export function BookingForm({
       warrantNumber: "",
       bail: "",
     });
-
-    // await updateBookingEntry({ id, data: newEntry, includeCharges: true });
   };
 
   const updateNewEntry = (key: keyof FormEntry, value: string) => {
@@ -264,7 +290,6 @@ export function BookingForm({
         ...p,
         [key]: value,
       };
-      // debouncedBooking({ charges: [newEntry] }, true);
       return newEntry;
     });
   };
@@ -327,24 +352,11 @@ export function BookingForm({
       color_legend: color as any,
     });
     if (!pdfbytes) return;
-
-    const blob = new Blob([pdfbytes], { type: "application/pdf" });
-
-    // Create a URL for the blob
-    const url = URL.createObjectURL(blob);
-
-    // Create a temporary link element
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `booking-form-${formData["arrest_agency"] || "download"}-${color === "none" ? "" : color}.pdf`; // Set the filename
-
-    // Append to document, click, and cleanup
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean up the URL object
-    URL.revokeObjectURL(url);
+    downloadPdf({
+      color,
+      pdfbytes,
+      arrest_agency_name: formData.arrest_agency,
+    });
   };
 
   const printMultipleForms = async () => {
@@ -356,15 +368,57 @@ export function BookingForm({
       await Promise.all(
         COLOR_LEGEND.map(async (color) => await printForm(color.label))
       );
-      // for (const color of COLOR_LEGEND) {
-      //   await printForm(color.label);
-      // }
       return;
     }
     await Promise.all(colorLegend.map(async (color) => await printForm(color)));
-    // for (const color of colorLegend) {
-    //   await printForm(color);
-    // }
+  };
+
+  const printCombinedForms = async () => {
+    const printFormBytes = async (color: string) => {
+      const pdfbytes = await fillBookingForm({
+        charges: entries,
+        formData,
+        color_legend: color as any,
+      });
+      return pdfbytes;
+    };
+
+    if (colorLegend.length === 0) {
+      alert("Please select at least one color legend");
+      return;
+    }
+    if (colorLegend.includes("all")) {
+      const bytes = await Promise.all(
+        COLOR_LEGEND.map(async (color) => await printFormBytes(color.label))
+      );
+      if (bytes.length === 0 || bytes === undefined) return;
+
+      const Combined = await mergePDFs(bytes.filter((v) => v !== undefined));
+
+      if (Combined === undefined) return;
+      downloadPdf({
+        color: "combined",
+        pdfbytes: Combined,
+        arrest_agency_name: formData.arrest_agency,
+      });
+
+      return;
+    }
+    const bytes = await Promise.all(
+      colorLegend.map(async (color) => await printFormBytes(color))
+    );
+
+    if (bytes.length === 0 || bytes === undefined) return;
+
+    const Combined = await mergePDFs(bytes.filter((v) => v !== undefined));
+
+    if (Combined === undefined) return;
+
+    downloadPdf({
+      color: "combined",
+      pdfbytes: Combined,
+      arrest_agency_name: formData.arrest_agency,
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -1872,14 +1926,25 @@ export function BookingForm({
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button
-              variant={"link"}
-              type="button"
-              onClick={printMultipleForms}
-              className=""
-            >
-              Print (Checked only)
-            </Button>
+            <div>
+              <Button
+                variant={"link"}
+                type="button"
+                onClick={printMultipleForms}
+                className=""
+              >
+                Print (Checked only)
+              </Button>
+
+              <Button
+                variant={"link"}
+                type="button"
+                onClick={printCombinedForms}
+                className=""
+              >
+                Print (Combined)
+              </Button>
+            </div>
             <div className="w-full flex gap-1">
               <Button type="submit" className="w-full">
                 Create Cause Form

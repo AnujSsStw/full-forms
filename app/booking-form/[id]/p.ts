@@ -595,3 +595,13 @@ export function fillFormFieldWithFittedText(
   field.setText(text);
   field.setFontSize(fontSize);
 }
+
+export const mergePDFs = async (pdfs: Uint8Array[]) => {
+  const pdfDoc = await PDFDocument.create();
+  for (const pdfBytes of pdfs) {
+    const pdf = await PDFDocument.load(pdfBytes);
+    const copiedPages = await pdfDoc.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => pdfDoc.addPage(page));
+  }
+  return await pdfDoc.save();
+};
