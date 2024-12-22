@@ -596,7 +596,7 @@ export function fillFormFieldWithFittedText(
   field.setFontSize(fontSize);
 }
 
-export const mergePDFs = async (pdfs: Uint8Array[]) => {
+export const mergePDFs = async (pdfs: any[]) => {
   const pdfDoc = await PDFDocument.create();
   for (const pdfBytes of pdfs) {
     const pdf = await PDFDocument.load(pdfBytes);

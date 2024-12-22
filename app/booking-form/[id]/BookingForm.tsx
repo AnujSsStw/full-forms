@@ -391,7 +391,7 @@ export function BookingForm({
       const bytes = await Promise.all(
         COLOR_LEGEND.map(async (color) => await printFormBytes(color.label))
       );
-      if (bytes.length === 0 || bytes === undefined) return;
+      if (bytes.length === 0) return;
 
       const Combined = await mergePDFs(bytes.filter((v) => v !== undefined));
 
