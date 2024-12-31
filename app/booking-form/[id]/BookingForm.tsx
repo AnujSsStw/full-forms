@@ -46,6 +46,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { fillBookingForm, mergePDFs } from "./p";
 import { title } from "process";
 import { cn } from "@/lib/utils";
+import { PenalCodeSearch } from "@/components/penal-code-search";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -209,7 +210,7 @@ export function BookingForm({
     warrantNumber: "",
     bail: "",
   });
-  const [queryByCode, setQueryByCode] = useState(false);
+  // const [queryByCode, setQueryByCode] = useState(false);
   const [penalCodes, setPenalCode] = useState<PenaltyQueryResult>();
   // PenalCode.map((pc) => {
   //   return {
@@ -219,12 +220,12 @@ export function BookingForm({
   //     narrative: pc.NARRATIVE,
   //   };
   // }).slice(0, 10)
-  const [searchTerm, setSearchTerm] = useState("");
+  // const [searchTerm, setSearchTerm] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const [mounted, setMounted] = useState(false);
   const [colorLegend, setColorLegend] = useState<string[]>([]);
 
-  const q = useAction(api.pc.getPenalty);
+  // const q = useAction(api.pc.getPenalty);
   const updateBookingEntry = useMutation(api.mutation.updateBooking);
   // const pdfUrl = useQuery(api.query.getBookingPdf);
   const createCause = useMutation(api.mutation.createCauseWithBooking);
@@ -245,16 +246,16 @@ export function BookingForm({
     }
   }, [bookingForm]);
 
-  useEffect(() => {
-    if (searchTerm.length < 3 && queryByCode === false) return;
+  // useEffect(() => {
+  //   if (searchTerm.length < 3 && queryByCode === false) return;
 
-    debounced(searchTerm);
-  }, [searchTerm]);
+  //   debounced(searchTerm);
+  // }, [searchTerm]);
 
-  const debounced = useDebouncedCallback(async (value) => {
-    const data = await q({ query: value, queryByCode });
-    setPenalCode(data);
-  }, 1000);
+  // const debounced = useDebouncedCallback(async (value) => {
+  //   const data = await q({ query: value, queryByCode });
+  //   setPenalCode(data);
+  // }, 1000);
 
   const debouncedBooking = useDebouncedCallback(
     async (value, includeCharges) => {
@@ -1096,7 +1097,7 @@ export function BookingForm({
                 </RadioGroup>
               </div>
 
-              <div className="space-y-6 max-w-2xl mx-auto">
+              {/* <div className="space-y-6 max-w-2xl mx-auto">
                 <div className="relative">
                   <Input
                     type="text"
@@ -1166,7 +1167,13 @@ export function BookingForm({
                     </p>
                   </div>
                 ) : null}
-              </div>
+              </div> */}
+
+              <PenalCodeSearch
+                handleAddPenalCode={handleAddPenalCode}
+                penalCodes={penalCodes}
+                setPenalCode={setPenalCode}
+              />
 
               <div className="space-y-2">
                 <Table>

@@ -17,6 +17,7 @@ export function Navigation({}: {}) {
   const pathname = usePathname();
   const isbookingFormPath = pathname.includes("/booking-form");
   const isCauseFormPath = pathname.includes("/cause-form");
+  const isReportPath = pathname.includes("/report");
 
   return (
     <nav className="sticky top-0 z-50 flex w-full flex-col border-b border-border bg-card px-6">
@@ -99,6 +100,24 @@ export function Navigation({}: {}) {
             href={"/cause-form"}
           >
             Cause Form
+          </Link>
+        </div>
+        <div
+          className={cn(
+            `flex h-12 items-center border-b-2`,
+            isReportPath ? "border-primary" : "border-transparent"
+          )}
+        >
+          <Link
+            className={cn(
+              `${buttonVariants({
+                variant: "ghost",
+                size: "sm",
+              })} text-primary/80`
+            )}
+            href={"/report"}
+          >
+            Report
           </Link>
         </div>
       </div>

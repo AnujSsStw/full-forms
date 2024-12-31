@@ -3,7 +3,7 @@ import schema from "./schema";
 import { action, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-type PC = Infer<typeof schema.tables.pc.validator>;
+export type PC = Infer<typeof schema.tables.pc.validator>;
 
 // Define return type for both query functions
 export type PenaltyQueryResult = PC[];
