@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  crimeElement: defineTable({
+    pcId: v.id("pc"),
+    element: v.array(v.string()),
+    calcrim_example: v.array(v.string()),
+  }).index("by_pcId", ["pcId"]),
+
   // CODE #,CODE TYPE,NARRATIVE,M/F
   pc: defineTable({
     code_number: v.string(),
@@ -32,6 +38,7 @@ export default defineSchema({
     dimensions: 1536,
     vectorField: "embedding",
   }),
+
   messages: defineTable({
     isViewer: v.boolean(),
     sessionId: v.string(),

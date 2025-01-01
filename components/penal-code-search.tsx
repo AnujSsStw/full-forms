@@ -85,6 +85,7 @@ export const PenalCodeSearch = ({
               className="cursor-pointer  flex justify-between px-3 border-b last:border-b-0 hover:bg-gray-800"
               onClick={() => {
                 handleAddPenalCode(idx);
+                setSearchTerm("");
               }}
             >
               <div>

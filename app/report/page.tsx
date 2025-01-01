@@ -1,4 +1,6 @@
 import { ReportValidator } from "./ReportValidator";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
+import "@/app/report/editor.css";
 
 export default function ReportPage() {
   return (
