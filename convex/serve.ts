@@ -11,6 +11,21 @@ import { internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 
 const OPENAI_MODEL = "gpt-3.5-turbo";
+const MAX_TOKENS = 4000; // Adjust based on your GPT model's limit
+
+function truncateText(text: string): string {
+  // Rough approximation: 1 token ≈ 4 characters
+  const maxChars = MAX_TOKENS * 4;
+  if (text.length <= maxChars) return text;
+
+  // Take first and last portions of the text
+  const halfLength = Math.floor(maxChars / 2);
+  const firstHalf = text.slice(0, halfLength);
+  const secondHalf = text.slice(-halfLength);
+
+  return `${firstHalf}\n\n[...Content truncated for length...]\n\n${secondHalf}`;
+}
+
 async function embedTexts(text: string) {
   if (!text) return [];
 
@@ -269,5 +284,241 @@ export const getCrimeElement = internalQuery({
   },
   handler: async (ctx, { id }) => {
     return ctx.db.get(id);
+  },
+});
+
+// Add this type for structured analysis results
+export type AnalysisResult = {
+  documentation: {
+    analysis: string;
+    issues: string[];
+  };
+  legalStandards: {
+    analysis: string;
+    issues: string[];
+  };
+  courtScrutiny: {
+    analysis: string;
+    issues: string[];
+  };
+};
+
+export const validateReport = action({
+  args: {
+    bookingFormId: v.optional(v.id("booking")),
+    selectedCodes: v.optional(
+      v.array(
+        v.object({
+          _id: v.id("crimeElement"),
+          pcId: v.id("pc"),
+          element: v.array(v.string()),
+          calcrim_example: v.array(v.string()),
+          code_number: v.string(),
+          narrative: v.string(),
+        })
+      )
+    ),
+    reportText: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<AnalysisResult> => {
+    let data;
+    if (args.bookingFormId) {
+      data = await ctx.runQuery(internal.serve.getFormData, {
+        id: args.bookingFormId,
+      });
+    }
+    const openai = new OpenAI();
+
+    const reportText = args.reportText
+      ? truncateText(args.reportText)
+      : undefined;
+
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a legal expert analyzing police reports. Analyze the report for:
+
+          1. Documentation Quality:
+          - Completeness and accuracy of factual information
+          - Clarity and professionalism of writing
+          - Proper formatting and organization
+
+          2. Legal Standards Compliance:
+          - Adherence to required legal elements
+          - Proper citation of applicable codes
+          - Support for each legal element
+
+          3. Court Scrutiny Readiness:
+          - Strength of evidence documentation
+          - Potential defense challenges
+          - Overall legal sufficiency
+
+          Provide a structured JSON response with analysis, issues for each standard.
+          Format:
+          {
+            "documentation": {
+              "analysis": "detailed analysis",
+              "issues": ["issue1", "issue2"],
+            },
+            "legalStandards": {
+              "analysis": "detailed analysis",
+              "issues": ["issue1", "issue2"],
+            },
+            "courtScrutiny": {
+              "analysis": "detailed analysis",
+              "issues": ["issue1", "issue2"],
+            }
+          }`,
+        },
+        {
+          role: "user",
+          content: `Analyze this case with the following context:
+          ${args.selectedCodes ? `Penal Codes: ${JSON.stringify(args.selectedCodes, null, 2)}` : ""}
+          ${reportText ? `Report Text: ${reportText}` : ""}`,
+        },
+      ],
+    });
+    const content = response.choices[0].message.content;
+    if (!content) throw new Error("no conten is created");
+
+    return JSON.parse(content) as AnalysisResult;
+  },
+});
+
+export const suggestImprovements = action({
+  args: {
+    bookingFormId: v.optional(v.id("booking")),
+    selectedCodes: v.optional(
+      v.array(
+        v.object({
+          _id: v.id("crimeElement"),
+          pcId: v.id("pc"),
+          element: v.array(v.string()),
+          calcrim_example: v.array(v.string()),
+          code_number: v.string(),
+          narrative: v.string(),
+        })
+      )
+    ),
+    reportText: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // let data = null;
+    // if (args.bookingFormId) {
+    //   data = await ctx.runQuery(internal.serve.getFormData, {
+    //     id: args.bookingFormId,
+    //   });
+    // }
+    const openai = new OpenAI();
+
+    const reportText = args.reportText
+      ? truncateText(args.reportText)
+      : undefined;
+
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a legal writing expert. Provide specific suggestions to improve the report's:
+
+          1. Documentation Quality:
+          - Clarity and completeness of factual information
+          - Professional writing and organization
+          - Proper formatting and structure
+          
+          2. Legal Compliance:
+          - Coverage of required elements
+          - Evidence documentation
+          - Legal terminology usage
+          
+          3. Court Effectiveness:
+          - Strengthening evidence presentation
+          - Anticipating defense challenges
+          - Overall persuasiveness
+          
+          Provide specific, actionable suggestions that will strengthen the report.`,
+        },
+        {
+          role: "user",
+          content: `Suggest improvements for this case:
+          ${args.selectedCodes ? `Penal Codes: ${JSON.stringify(args.selectedCodes, null, 2)}` : ""}
+          ${reportText ? `Current Report: ${reportText}` : ""}`,
+        },
+      ],
+    });
+
+    return response.choices[0].message.content;
+  },
+});
+
+export const generateExample = action({
+  args: {
+    selectedCodes: v.array(
+      v.object({
+        element: v.array(v.string()),
+        calcrim_example: v.array(v.string()),
+        code_number: v.string(),
+        narrative: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const openai = new OpenAI();
+
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a legal writing expert. Generate a model report that demonstrates:
+
+          1. Exemplary Documentation:
+          - Clear and complete factual presentation
+          - Professional writing style
+          - Proper structure and organization
+          
+          2. Strong Legal Foundation:
+          - Clear establishment of all elements
+          - Proper evidence documentation
+          - Appropriate legal terminology
+          
+          3. Court-Ready Format:
+          - Comprehensive evidence presentation
+          - Anticipation of scrutiny
+          - Persuasive narrative structure
+          
+          Create a realistic example that serves as an effective template.`,
+        },
+        {
+          role: "user",
+          content: `Generate an example report for these penal codes:
+          ${JSON.stringify(args.selectedCodes, null, 2)}`,
+        },
+      ],
+    });
+
+    return response.choices[0].message.content;
+  },
+});
+
+export const getFormData = internalQuery({
+  args: {
+    id: v.id("booking"),
+  },
+  handler: async (ctx, { id }) => {
+    const booking_form_data = await ctx.db.get(id);
+    let cause_form_data: Doc<"cause"> | null = null;
+    if (booking_form_data && booking_form_data.causeId) {
+      cause_form_data = await ctx.db.get(booking_form_data.causeId);
+    }
+
+    return {
+      ...booking_form_data,
+      ...cause_form_data,
+    };
   },
 });

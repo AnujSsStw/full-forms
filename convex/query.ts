@@ -40,3 +40,13 @@ export const getAllSignature = query({
     return await ctx.db.query("signature").collect();
   },
 });
+
+export const getAllCaseNo = query({
+  handler: async (ctx) => {
+    return (await ctx.db.query("booking").collect()).map((v) => ({
+      bookingFormId: v._id,
+      createdAt: v._creationTime,
+      caseNumber: v.data["agency_case_number"] || "Not yet set",
+    }));
+  },
+});

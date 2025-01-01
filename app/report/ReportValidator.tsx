@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditorState, ContentState } from "draft-js";
@@ -10,36 +10,54 @@ import { PC, PenaltyQueryResult } from "@/convex/pc";
 import { PenalCodeSearch } from "@/components/penal-code-search";
 import { LineNumberEditor } from "./LineNumberEditor";
 import { cn } from "@/lib/utils";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AnalysisResult } from "@/convex/serve";
 
 // Dynamically import the Editor to avoid SSR issues
-const Editor = dynamic(
-  () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
-  { ssr: false }
-);
+// const Editor = dynamic(
+//   () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
+//   { ssr: false }
+// );
+
+export type SELECTCODE = {
+  _id: Id<"crimeElement">;
+  _creationTime: number;
+  pcId: Id<"pc">;
+  element: string[];
+  calcrim_example: string[];
+  code_number: string;
+  codeType: string;
+  narrative: string;
+  m_f: "M" | "F";
+};
 
 export function ReportValidator() {
-  const [selectedCode, setSelectedCode] = useState<
-    {
-      _id: Id<"crimeElement">;
-      _creationTime: number;
-      pcId: Id<"pc">;
-      element: string[];
-      calcrim_example: string[];
-      code_number: string;
-      codeType: string;
-      narrative: string;
-      m_f: "M" | "F";
-    }[]
-  >([]);
+  const [selectedCode, setSelectedCode] = useState<SELECTCODE[]>([]);
   const [editorState, setEditorState] = useState(() =>
     EditorState.createEmpty()
   );
   const [penalCodes, setPenalCode] = useState<PenaltyQueryResult>();
   const [lineNumbers, setLineNumbers] = useState(true);
   const getCrimeElement = useAction(api.serve.crimeElement);
+  const getCaseNo = useQuery(api.query.getAllCaseNo);
+  const [caseSelect, setCaseSelect] = useState("");
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(
+    null
+  );
+  const validateReport = useAction(api.serve.validateReport);
+  const generateExample = useAction(api.serve.generateExample);
+  const suggestImprovements = useAction(api.serve.suggestImprovements);
+  const [suggestions, setSuggestions] = useState<string | null>(null);
+  const [example, setExample] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -54,7 +72,6 @@ export function ReportValidator() {
       reader.readAsText(file);
     }
   };
-  console.log(selectedCode);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,30 +176,169 @@ export function ReportValidator() {
           <CardTitle>Validation Results</CardTitle>
         </CardHeader>
         <CardContent>
+          <Select
+            onValueChange={(value) => {
+              setCaseSelect(value);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Case no." />
+            </SelectTrigger>
+            <SelectContent>
+              {getCaseNo?.map((v) => (
+                <SelectItem key={v.bookingFormId} value={v.bookingFormId}>
+                  {v.caseNumber}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="flex gap-2 my-4">
-            <Button onClick={console.log}>Check</Button>
-            <Button onClick={console.log}>Suggest</Button>
-            <Button onClick={console.log}>Correct</Button>
-            <Button onClick={console.log}>Example</Button>
+            <Button
+              onClick={async () => {
+                const results = await validateReport({
+                  bookingFormId: caseSelect as Id<"booking">,
+                  reportText: editorState.getCurrentContent().getPlainText(),
+                  selectedCodes: selectedCode,
+                });
+                setAnalysisResults(results);
+                setSuggestions(null);
+                setExample(null);
+              }}
+            >
+              Check
+            </Button>
+            <Button
+              onClick={async () => {
+                const suggestions = await suggestImprovements({
+                  bookingFormId: caseSelect as Id<"booking">,
+                  reportText: editorState.getCurrentContent().getPlainText(),
+                  selectedCodes: selectedCode,
+                });
+                setSuggestions(suggestions);
+                setAnalysisResults(null);
+                setExample(null);
+              }}
+            >
+              Suggest
+            </Button>
+            <Button
+              onClick={async () => {
+                if (selectedCode.length === 0) {
+                  alert("Please select at least one penal code");
+                  return;
+                }
+                const example = await generateExample({
+                  selectedCodes: selectedCode.map((v) => ({
+                    element: v.element,
+                    calcrim_example: v.calcrim_example,
+                    code_number: v.code_number,
+                    narrative: v.narrative,
+                  })),
+                });
+                setExample(example);
+                setAnalysisResults(null);
+                setSuggestions(null);
+              }}
+            >
+              Example
+            </Button>
           </div>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold mb-2">Probable Cause Analysis</h3>
-              <div className="pl-4 border-l-2 border-gray-200">
-                {/* Placeholder for probable cause analysis */}
-                <p className="text-gray-600">Analysis pending...</p>
+
+          {analysisResults && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold mb-2">Documentation Analysis</h3>
+                <div className="pl-4 border-l-2 border-gray-200">
+                  <p className="text-gray-800 mb-2">
+                    {analysisResults.documentation.analysis}
+                  </p>
+                  {analysisResults.documentation.issues.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-red-600 font-semibold">Issues:</p>
+                      <ul className="list-disc pl-5">
+                        {analysisResults.documentation.issues.map(
+                          (issue, i) => (
+                            <li key={i} className="text-red-600">
+                              {issue}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">
+                  Legal Standards Compliance
+                </h3>
+                <div className="pl-4 border-l-2 border-gray-200">
+                  <p className="text-gray-800 mb-2">
+                    {analysisResults.legalStandards.analysis}
+                  </p>
+                  {analysisResults.legalStandards.issues.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-red-600 font-semibold">Issues:</p>
+                      <ul className="list-disc pl-5">
+                        {analysisResults.legalStandards.issues.map(
+                          (issue, i) => (
+                            <li key={i} className="text-red-600">
+                              {issue}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">
+                  Court Scrutiny Assessment
+                </h3>
+                <div className="pl-4 border-l-2 border-gray-200">
+                  <p className="text-gray-800 mb-2">
+                    {analysisResults.courtScrutiny.analysis}
+                  </p>
+                  {analysisResults.courtScrutiny.issues.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-red-600 font-semibold">Issues:</p>
+                      <ul className="list-disc pl-5">
+                        {analysisResults.courtScrutiny.issues.map(
+                          (issue, i) => (
+                            <li key={i} className="text-red-600">
+                              {issue}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <h3 className="font-semibold mb-2">
-                Beyond Reasonable Doubt Analysis
-              </h3>
-              <div className="pl-4 border-l-2 border-gray-200">
-                {/* Placeholder for BRD analysis */}
-                <p className="text-gray-600">Analysis pending...</p>
+          )}
+
+          {suggestions && (
+            <div className="space-y-4">
+              <h3 className="font-semibold">Suggested Improvements</h3>
+              <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
+                {suggestions}
               </div>
             </div>
-          </div>
+          )}
+
+          {example && (
+            <div className="space-y-4">
+              <h3 className="font-semibold">Example Report</h3>
+              <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
+                {example}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
