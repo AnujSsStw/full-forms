@@ -38,7 +38,7 @@ export default function IndexBookingPage() {
         <div className="flex justify-between items-center mb-4 gap-2">
           <Input
             type="search"
-            placeholder="Search entries..."
+            placeholder="Search entries by case no. or arresting officer."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className=""

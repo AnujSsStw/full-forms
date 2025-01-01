@@ -20,13 +20,24 @@ export default function IndexCausePage() {
 
   const router = useRouter();
 
+  const filteredCause = getAllCause?.filter((entry) => {
+    if (!searchTerm) return true;
+    return (
+      entry.data["agency-case"]
+        .toLowerCase()
+        .trim()
+        .includes(searchTerm.toLowerCase()) ||
+      entry.data.booking.toLowerCase().trim().includes(searchTerm.toLowerCase())
+    );
+  });
+
   return (
     <main>
       <div className="p-4 max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-4 gap-2">
           <Input
             type="search"
-            placeholder="Search entries..."
+            placeholder="Search entries by agency case no. or booking no."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className=""
@@ -41,18 +52,11 @@ export default function IndexCausePage() {
           </Button>
         </div>
         <div className="space-y-2">
-          {/* {filteredEntries.map((entry) => (
-            <div key={entry.id} className="p-4 border rounded">
-              <h3 className="font-bold">{entry.title}</h3>
-              <p>{entry.description}</p>
-            </div>
-          ))} */}
-
           {!getAllCause ? (
             <p>Loading...</p>
           ) : (
             <div>
-              {getAllCause.map((entry) => (
+              {filteredCause?.map((entry) => (
                 <div
                   key={entry._id}
                   className="p-4 border rounded  flex justify-between items-center mb-4"
