@@ -1,14 +1,17 @@
 import { v } from "convex/values";
+import { MessageContent } from "openai/resources/beta/threads/messages";
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/index";
 import {
   action,
+  ActionCtx,
   internalAction,
   internalMutation,
   internalQuery,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
+import { asyncMap, asyncSleep } from "modern-async";
 
 const OPENAI_MODEL = "gpt-3.5-turbo";
 const MAX_TOKENS = 4000; // Adjust based on your GPT model's limit
@@ -545,3 +548,57 @@ export const getFormData = internalQuery({
     return cause_form_data?.data;
   },
 });
+
+export const correction = action({
+  args: {
+    text: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const openai = new OpenAI();
+    const { id: threadId } = await openai.beta.threads.create();
+    const { id: lastMessageId } = await openai.beta.threads.messages.create(
+      threadId,
+      { role: "user", content: args.text }
+    );
+    const { id: runId } = await openai.beta.threads.runs.create(threadId, {
+      assistant_id: "asst_pfDzxmL51GKm971oOMWR4w83", // Later have to change this to env or something
+    });
+
+    const data = await pollForAnswer(ctx, {
+      runId,
+      threadId,
+      lastMessageId,
+    });
+
+    return data;
+  },
+});
+
+async function pollForAnswer(
+  ctx: ActionCtx,
+  args: {
+    threadId: string;
+    runId: string;
+    lastMessageId: string;
+  }
+) {
+  const { threadId, runId, lastMessageId } = args;
+  const openai = new OpenAI();
+  while (true) {
+    await asyncSleep(500);
+    const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+    switch (run.status) {
+      case "failed":
+      case "expired":
+      case "cancelled":
+        return "I cannot reply at this time. Reach out to the team on Discord";
+      case "completed": {
+        const { data: newMessages } = await openai.beta.threads.messages.list(
+          threadId,
+          { after: lastMessageId, order: "asc" }
+        );
+        return newMessages;
+      }
+    }
+  }
+}
