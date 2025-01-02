@@ -306,18 +306,7 @@ export type AnalysisResult = {
 export const validateReport = action({
   args: {
     bookingFormId: v.optional(v.id("booking")),
-    selectedCodes: v.optional(
-      v.array(
-        v.object({
-          _id: v.id("crimeElement"),
-          pcId: v.id("pc"),
-          element: v.array(v.string()),
-          calcrim_example: v.array(v.string()),
-          code_number: v.string(),
-          narrative: v.string(),
-        })
-      )
-    ),
+    selectedCodes: v.optional(v.array(v.any())),
     reportText: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<AnalysisResult> => {
@@ -377,6 +366,7 @@ export const validateReport = action({
           role: "user",
           content: `Analyze this case with the following context:
           ${args.selectedCodes ? `Penal Codes: ${JSON.stringify(args.selectedCodes, null, 2)}` : ""}
+          ${data ? `Additional data of the PROBABLE CAUSE and someother info: ${JSON.stringify(data, null, 2)}` : ""}
           ${reportText ? `Report Text: ${reportText}` : ""}`,
         },
       ],
@@ -391,22 +381,11 @@ export const validateReport = action({
 export const suggestImprovements = action({
   args: {
     bookingFormId: v.optional(v.id("booking")),
-    selectedCodes: v.optional(
-      v.array(
-        v.object({
-          _id: v.id("crimeElement"),
-          pcId: v.id("pc"),
-          element: v.array(v.string()),
-          calcrim_example: v.array(v.string()),
-          code_number: v.string(),
-          narrative: v.string(),
-        })
-      )
-    ),
+    selectedCodes: v.optional(v.array(v.any())),
     reportText: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // let data = null;
+    // let data;
     // if (args.bookingFormId) {
     //   data = await ctx.runQuery(internal.serve.getFormData, {
     //     id: args.bookingFormId,
@@ -457,14 +436,8 @@ export const suggestImprovements = action({
 
 export const generateExample = action({
   args: {
-    selectedCodes: v.array(
-      v.object({
-        element: v.array(v.string()),
-        calcrim_example: v.array(v.string()),
-        code_number: v.string(),
-        narrative: v.string(),
-      })
-    ),
+    selectedCodes: v.optional(v.array(v.any())),
+    text: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const openai = new OpenAI();
@@ -496,8 +469,10 @@ export const generateExample = action({
         },
         {
           role: "user",
-          content: `Generate an example report for these penal codes:
-          ${JSON.stringify(args.selectedCodes, null, 2)}`,
+          content: `Generate an example report based on these penal codes:
+          ${JSON.stringify(args.selectedCodes, null, 2)}
+          ${args.text && args.text.length > 2 ? `And with the base report ${JSON.stringify(args.text, null, 2)}` : ""}
+          `,
         },
       ],
     });
@@ -517,9 +492,6 @@ export const getFormData = internalQuery({
       cause_form_data = await ctx.db.get(booking_form_data.causeId);
     }
 
-    return {
-      ...booking_form_data,
-      ...cause_form_data,
-    };
+    return cause_form_data?.data;
   },
 });

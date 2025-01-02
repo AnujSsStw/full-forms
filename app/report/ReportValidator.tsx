@@ -65,7 +65,7 @@ export function ReportValidator() {
     setLoading(true);
     switch (type) {
       case "example":
-        if (selectedCode.length !== 0) {
+        if (selectedCode.length === 0) {
           alert("Please select at least one penal code");
           setLoading(false);
           return;
@@ -77,6 +77,7 @@ export function ReportValidator() {
             code_number: v.code_number,
             narrative: v.narrative,
           })),
+          text: editorState.getCurrentContent().getPlainText(),
         });
         setExample(example);
         setAnalysisResults(null);
@@ -389,7 +390,7 @@ export function ReportValidator() {
                 <div className="space-y-4">
                   <h3 className="font-semibold">Example Report</h3>
                   <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
-                    {example}
+                    <MarkdownRenderer content={example} />
                   </div>
                 </div>
               )}
