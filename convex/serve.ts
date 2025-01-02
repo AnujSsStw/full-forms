@@ -339,7 +339,7 @@ export const validateReport = action({
       messages: [
         {
           role: "system",
-          content: `You are a legal expert analyzing police reports. Analyze the report for:
+          content: `You are a law enforcement report analysis and writing assistant. Your role is to help analyze, improve, and generate detailed police reports following standard law enforcement documentation protocols. When presented with a report or case details:
 
           1. Documentation Quality:
           - Completeness and accuracy of factual information
@@ -423,7 +423,7 @@ export const suggestImprovements = action({
       messages: [
         {
           role: "system",
-          content: `You are a legal writing expert. Provide specific suggestions to improve the report's:
+          content: `You are a law enforcement report analysis and writing assistant. Your role is to help analyze, improve, and generate detailed police reports following standard law enforcement documentation protocols. When presented with a report or case details:
 
           1. Documentation Quality:
           - Clarity and completeness of factual information
@@ -474,24 +474,25 @@ export const generateExample = action({
       messages: [
         {
           role: "system",
-          content: `You are a legal writing expert. Generate a model report that demonstrates:
+          content: `You are an experienced police report writing instructor. Generate a model police report that demonstrates:
 
-          1. Exemplary Documentation:
-          - Clear and complete factual presentation
-          - Professional writing style
-          - Proper structure and organization
+          1. Professional Report Writing:
+          - Clear chronological narrative of events
+          - Objective, fact-based observations
+          - Proper police terminology and formatting
           
-          2. Strong Legal Foundation:
-          - Clear establishment of all elements
-          - Proper evidence documentation
-          - Appropriate legal terminology
+          2. Complete Documentation:
+          - Detailed probable cause elements
+          - Specific suspect actions and statements
+          - Witness information and statements
+          - Physical evidence description
           
-          3. Court-Ready Format:
-          - Comprehensive evidence presentation
-          - Anticipation of scrutiny
-          - Persuasive narrative structure
+          3. Legal Requirements:
+          - All elements of cited crimes
+          - Chain of events supporting probable cause
+          - Clear articulation of reasonable suspicion
           
-          Create a realistic example that serves as an effective template.`,
+          Create a realistic police report that would stand up to court scrutiny.`,
         },
         {
           role: "user",

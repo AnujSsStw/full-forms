@@ -1,13 +1,20 @@
-import { Editor } from "react-draft-wysiwyg";
+// import { Editor } from "react-draft-wysiwyg";
 import { EditorState } from "draft-js";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+// Dynamically import the Editor to avoid SSR issues
+const Editor = dynamic(
+  () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
+  { ssr: false }
+);
 
 interface LineNumberEditorProps {
   editorState: EditorState;
   onEditorStateChange: (editorState: EditorState) => void;
 }
 
-export function LineNumberEditor({
+export function TextEditor({
   editorState,
   onEditorStateChange,
 }: LineNumberEditorProps) {

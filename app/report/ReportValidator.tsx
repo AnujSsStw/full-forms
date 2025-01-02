@@ -1,18 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import MarkdownRenderer from "@/components/markdown-render";
+import { PenalCodeSearch } from "@/components/penal-code-search";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EditorState, ContentState } from "draft-js";
-import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
-import { PC, PenaltyQueryResult } from "@/convex/pc";
-import { PenalCodeSearch } from "@/components/penal-code-search";
-import { LineNumberEditor } from "./LineNumberEditor";
-import { cn } from "@/lib/utils";
-import { useAction, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Doc, Id } from "@/convex/_generated/dataModel";
 import {
   Select,
   SelectContent,
@@ -20,13 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { api } from "@/convex/_generated/api";
+import { Doc, Id } from "@/convex/_generated/dataModel";
+import { PenaltyQueryResult } from "@/convex/pc";
 import { AnalysisResult } from "@/convex/serve";
-
-// Dynamically import the Editor to avoid SSR issues
-// const Editor = dynamic(
-//   () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
-//   { ssr: false }
-// );
+import { cn } from "@/lib/utils";
+import { useAction, useQuery } from "convex/react";
+import { ContentState, EditorState } from "draft-js";
+import mammoth from "mammoth";
+import { useState } from "react";
+import { TextEditor } from "./LineNumberEditor";
 
 export type SELECTCODE = {
   _id: Id<"crimeElement">;
@@ -49,27 +44,105 @@ export function ReportValidator() {
   const [lineNumbers, setLineNumbers] = useState(true);
   const getCrimeElement = useAction(api.serve.crimeElement);
   const getCaseNo = useQuery(api.query.getAllCaseNo);
+
   const [caseSelect, setCaseSelect] = useState("");
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(
     null
   );
+  const [suggestions, setSuggestions] = useState<string | null>(null);
+  const [example, setExample] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
   const validateReport = useAction(api.serve.validateReport);
   const generateExample = useAction(api.serve.generateExample);
   const suggestImprovements = useAction(api.serve.suggestImprovements);
-  const [suggestions, setSuggestions] = useState<string | null>(null);
-  const [example, setExample] = useState<string | null>(null);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  async function handleButtonClick({
+    type,
+  }: {
+    type: "validate" | "example" | "suggest";
+  }) {
+    setLoading(true);
+    switch (type) {
+      case "example":
+        if (selectedCode.length !== 0) {
+          alert("Please select at least one penal code");
+          setLoading(false);
+          return;
+        }
+        const example = await generateExample({
+          selectedCodes: selectedCode.map((v) => ({
+            element: v.element,
+            calcrim_example: v.calcrim_example,
+            code_number: v.code_number,
+            narrative: v.narrative,
+          })),
+        });
+        setExample(example);
+        setAnalysisResults(null);
+        setSuggestions(null);
+        break;
+
+      case "suggest":
+        const suggestions = await suggestImprovements({
+          bookingFormId: caseSelect ? (caseSelect as Id<"booking">) : undefined,
+          reportText: editorState.getCurrentContent().getPlainText(),
+          selectedCodes: selectedCode || undefined,
+        });
+        setSuggestions(suggestions);
+        setAnalysisResults(null);
+        setExample(null);
+        break;
+
+      case "validate":
+        const results = await validateReport({
+          bookingFormId: caseSelect ? (caseSelect as Id<"booking">) : undefined,
+          reportText: editorState.getCurrentContent().getPlainText(),
+          selectedCodes: selectedCode || undefined,
+        });
+        setAnalysisResults(results);
+        setSuggestions(null);
+        setExample(null);
+        break;
+
+      default:
+        break;
+    }
+    setLoading(false);
+  }
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        const contentState = ContentState.createFromText(text);
-        const newEditorState = EditorState.createWithContent(contentState);
-        setEditorState(newEditorState);
-      };
-      reader.readAsText(file);
+    if (!file) return;
+
+    try {
+      let text = "";
+
+      if (
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        file.type === "application/msword"
+      ) {
+        const buffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+        text = result.value;
+      } else {
+        // Fallback for txt files
+        const reader = new FileReader();
+        text = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsText(file);
+        });
+      }
+
+      const contentState = ContentState.createFromText(text);
+      const newEditorState = EditorState.createWithContent(contentState);
+      setEditorState(newEditorState);
+    } catch (error) {
+      console.error("Error processing file:", error);
+      alert("Error processing file. Please try again.");
     }
   };
 
@@ -163,7 +236,7 @@ export function ReportValidator() {
         </CardHeader>
         <CardContent>
           <div className="border rounded-md">
-            <LineNumberEditor
+            <TextEditor
               editorState={editorState}
               onEditorStateChange={setEditorState}
             />
@@ -196,149 +269,130 @@ export function ReportValidator() {
           <div className="flex gap-2 my-4">
             <Button
               onClick={async () => {
-                const results = await validateReport({
-                  bookingFormId: caseSelect as Id<"booking">,
-                  reportText: editorState.getCurrentContent().getPlainText(),
-                  selectedCodes: selectedCode,
-                });
-                setAnalysisResults(results);
-                setSuggestions(null);
-                setExample(null);
+                await handleButtonClick({ type: "validate" });
               }}
             >
               Check
             </Button>
             <Button
               onClick={async () => {
-                const suggestions = await suggestImprovements({
-                  bookingFormId: caseSelect as Id<"booking">,
-                  reportText: editorState.getCurrentContent().getPlainText(),
-                  selectedCodes: selectedCode,
-                });
-                setSuggestions(suggestions);
-                setAnalysisResults(null);
-                setExample(null);
+                await handleButtonClick({ type: "suggest" });
               }}
             >
               Suggest
             </Button>
             <Button
               onClick={async () => {
-                if (selectedCode.length === 0) {
-                  alert("Please select at least one penal code");
-                  return;
-                }
-                const example = await generateExample({
-                  selectedCodes: selectedCode.map((v) => ({
-                    element: v.element,
-                    calcrim_example: v.calcrim_example,
-                    code_number: v.code_number,
-                    narrative: v.narrative,
-                  })),
-                });
-                setExample(example);
-                setAnalysisResults(null);
-                setSuggestions(null);
+                await handleButtonClick({ type: "example" });
               }}
             >
               Example
             </Button>
           </div>
 
-          {analysisResults && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold mb-2">Documentation Analysis</h3>
-                <div className="pl-4 border-l-2 border-gray-200">
-                  <p className="text-gray-800 mb-2">
-                    {analysisResults.documentation.analysis}
-                  </p>
-                  {analysisResults.documentation.issues.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-red-600 font-semibold">Issues:</p>
-                      <ul className="list-disc pl-5">
-                        {analysisResults.documentation.issues.map(
-                          (issue, i) => (
-                            <li key={i} className="text-red-600">
-                              {issue}
-                            </li>
-                          )
-                        )}
-                      </ul>
+          {loading
+            ? "loading..."
+            : analysisResults && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold mb-2">
+                      Documentation Analysis
+                    </h3>
+                    <div className="pl-4 border-l-2 border-gray-200">
+                      <p className="text-gray-800 mb-2">
+                        {analysisResults.documentation.analysis}
+                      </p>
+                      {analysisResults.documentation.issues.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-red-600 font-semibold">Issues:</p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.documentation.issues.map(
+                              (issue, i) => (
+                                <li key={i} className="text-red-600">
+                                  {issue}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              <div>
-                <h3 className="font-semibold mb-2">
-                  Legal Standards Compliance
-                </h3>
-                <div className="pl-4 border-l-2 border-gray-200">
-                  <p className="text-gray-800 mb-2">
-                    {analysisResults.legalStandards.analysis}
-                  </p>
-                  {analysisResults.legalStandards.issues.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-red-600 font-semibold">Issues:</p>
-                      <ul className="list-disc pl-5">
-                        {analysisResults.legalStandards.issues.map(
-                          (issue, i) => (
-                            <li key={i} className="text-red-600">
-                              {issue}
-                            </li>
-                          )
-                        )}
-                      </ul>
+                  <div>
+                    <h3 className="font-semibold mb-2">
+                      Legal Standards Compliance
+                    </h3>
+                    <div className="pl-4 border-l-2 border-gray-200">
+                      <p className="text-gray-800 mb-2">
+                        {analysisResults.legalStandards.analysis}
+                      </p>
+                      {analysisResults.legalStandards.issues.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-red-600 font-semibold">Issues:</p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.legalStandards.issues.map(
+                              (issue, i) => (
+                                <li key={i} className="text-red-600">
+                                  {issue}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              <div>
-                <h3 className="font-semibold mb-2">
-                  Court Scrutiny Assessment
-                </h3>
-                <div className="pl-4 border-l-2 border-gray-200">
-                  <p className="text-gray-800 mb-2">
-                    {analysisResults.courtScrutiny.analysis}
-                  </p>
-                  {analysisResults.courtScrutiny.issues.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-red-600 font-semibold">Issues:</p>
-                      <ul className="list-disc pl-5">
-                        {analysisResults.courtScrutiny.issues.map(
-                          (issue, i) => (
-                            <li key={i} className="text-red-600">
-                              {issue}
-                            </li>
-                          )
-                        )}
-                      </ul>
+                  <div>
+                    <h3 className="font-semibold mb-2">
+                      Court Scrutiny Assessment
+                    </h3>
+                    <div className="pl-4 border-l-2 border-gray-200">
+                      <p className="text-gray-800 mb-2">
+                        {analysisResults.courtScrutiny.analysis}
+                      </p>
+                      {analysisResults.courtScrutiny.issues.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-red-600 font-semibold">Issues:</p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.courtScrutiny.issues.map(
+                              (issue, i) => (
+                                <li key={i} className="text-red-600">
+                                  {issue}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {suggestions && (
-            <div className="space-y-4">
-              <h3 className="font-semibold">Suggested Improvements</h3>
-              <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
-                {suggestions}
-              </div>
-            </div>
-          )}
+          {loading
+            ? "loading..."
+            : suggestions && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Suggested Improvements</h3>
+                  <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
+                    <MarkdownRenderer content={suggestions} />
+                    {/* {suggestions} */}
+                  </div>
+                </div>
+              )}
 
-          {example && (
-            <div className="space-y-4">
-              <h3 className="font-semibold">Example Report</h3>
-              <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
-                {example}
-              </div>
-            </div>
-          )}
+          {loading
+            ? "loading..."
+            : example && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Example Report</h3>
+                  <div className="pl-4 border-l-2 border-gray-200 whitespace-pre-wrap">
+                    {example}
+                  </div>
+                </div>
+              )}
         </CardContent>
       </Card>
     </div>
