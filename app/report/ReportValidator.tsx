@@ -15,7 +15,7 @@ import {
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { PenaltyQueryResult } from "@/convex/pc";
-import { AnalysisResult } from "@/convex/serve";
+import { ReportAnalysis } from "@/convex/serve";
 import { cn } from "@/lib/utils";
 import { useAction, useQuery } from "convex/react";
 import { ContentState, EditorState } from "draft-js";
@@ -46,7 +46,7 @@ export function ReportValidator() {
   const getCaseNo = useQuery(api.query.getAllCaseNo);
 
   const [caseSelect, setCaseSelect] = useState("");
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(
+  const [analysisResults, setAnalysisResults] = useState<ReportAnalysis | null>(
     null
   );
   const [suggestions, setSuggestions] = useState<string | null>(null);
@@ -300,17 +300,51 @@ export function ReportValidator() {
                       Documentation Analysis
                     </h3>
                     <div className="pl-4 border-l-2 border-gray-200">
-                      <p className="text-gray-800 mb-2">
-                        {analysisResults.documentation.analysis}
-                      </p>
-                      {analysisResults.documentation.issues.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-red-600 font-semibold">Issues:</p>
+                      {analysisResults.documentationAnalysis.strengths.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-green-600 font-semibold">
+                            Strengths:
+                          </p>
                           <ul className="list-disc pl-5">
-                            {analysisResults.documentation.issues.map(
-                              (issue, i) => (
+                            {analysisResults.documentationAnalysis.strengths.map(
+                              (item, i) => (
+                                <li key={i} className="text-green-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.documentationAnalysis.weaknesses.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-red-600 font-semibold">
+                            Weaknesses:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.documentationAnalysis.weaknesses.map(
+                              (item, i) => (
                                 <li key={i} className="text-red-600">
-                                  {issue}
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.documentationAnalysis.recommendations
+                        .length > 0 && (
+                        <div>
+                          <p className="text-blue-600 font-semibold">
+                            Recommendations:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.documentationAnalysis.recommendations.map(
+                              (item, i) => (
+                                <li key={i} className="text-blue-600">
+                                  {item}
                                 </li>
                               )
                             )}
@@ -322,20 +356,54 @@ export function ReportValidator() {
 
                   <div>
                     <h3 className="font-semibold mb-2">
-                      Legal Standards Compliance
+                      Legal Elements Analysis
                     </h3>
                     <div className="pl-4 border-l-2 border-gray-200">
-                      <p className="text-gray-800 mb-2">
-                        {analysisResults.legalStandards.analysis}
-                      </p>
-                      {analysisResults.legalStandards.issues.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-red-600 font-semibold">Issues:</p>
+                      {analysisResults.legalElements.satisfiedElements.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-green-600 font-semibold">
+                            Satisfied Elements:
+                          </p>
                           <ul className="list-disc pl-5">
-                            {analysisResults.legalStandards.issues.map(
-                              (issue, i) => (
+                            {analysisResults.legalElements.satisfiedElements.map(
+                              (item, i) => (
+                                <li key={i} className="text-green-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.legalElements.missingElements.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-red-600 font-semibold">
+                            Missing Elements:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.legalElements.missingElements.map(
+                              (item, i) => (
                                 <li key={i} className="text-red-600">
-                                  {issue}
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.legalElements.recommendations.length >
+                        0 && (
+                        <div>
+                          <p className="text-blue-600 font-semibold">
+                            Recommendations:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.legalElements.recommendations.map(
+                              (item, i) => (
+                                <li key={i} className="text-blue-600">
+                                  {item}
                                 </li>
                               )
                             )}
@@ -347,20 +415,155 @@ export function ReportValidator() {
 
                   <div>
                     <h3 className="font-semibold mb-2">
-                      Court Scrutiny Assessment
+                      Investigative Quality
                     </h3>
                     <div className="pl-4 border-l-2 border-gray-200">
-                      <p className="text-gray-800 mb-2">
-                        {analysisResults.courtScrutiny.analysis}
-                      </p>
-                      {analysisResults.courtScrutiny.issues.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-red-600 font-semibold">Issues:</p>
+                      {analysisResults.investigativeQuality.completedSteps
+                        .length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-green-600 font-semibold">
+                            Completed Steps:
+                          </p>
                           <ul className="list-disc pl-5">
-                            {analysisResults.courtScrutiny.issues.map(
-                              (issue, i) => (
+                            {analysisResults.investigativeQuality.completedSteps.map(
+                              (item, i) => (
+                                <li key={i} className="text-green-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.investigativeQuality.missingSteps
+                        .length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-red-600 font-semibold">
+                            Missing Steps:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.investigativeQuality.missingSteps.map(
+                              (item, i) => (
                                 <li key={i} className="text-red-600">
-                                  {issue}
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.investigativeQuality.recommendations
+                        .length > 0 && (
+                        <div>
+                          <p className="text-blue-600 font-semibold">
+                            Recommendations:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.investigativeQuality.recommendations.map(
+                              (item, i) => (
+                                <li key={i} className="text-blue-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Court Preparation</h3>
+                    <div className="pl-4 border-l-2 border-gray-200">
+                      {analysisResults.courtPreparation.strengths.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-green-600 font-semibold">
+                            Strengths:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.courtPreparation.strengths.map(
+                              (item, i) => (
+                                <li key={i} className="text-green-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.courtPreparation.vulnerabilities.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-red-600 font-semibold">
+                            Vulnerabilities:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.courtPreparation.vulnerabilities.map(
+                              (item, i) => (
+                                <li key={i} className="text-red-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.courtPreparation.recommendations.length >
+                        0 && (
+                        <div>
+                          <p className="text-blue-600 font-semibold">
+                            Recommendations:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.courtPreparation.recommendations.map(
+                              (item, i) => (
+                                <li key={i} className="text-blue-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Overall Assessment</h3>
+                    <div className="pl-4 border-l-2 border-gray-200">
+                      <p className="text-gray-800 mb-2">
+                        Report Score:{" "}
+                        {analysisResults.overallAssessment.reportScore}/100
+                      </p>
+                      {analysisResults.overallAssessment.primaryIssues.length >
+                        0 && (
+                        <div className="mb-4">
+                          <p className="text-red-600 font-semibold">
+                            Primary Issues:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.overallAssessment.primaryIssues.map(
+                              (item, i) => (
+                                <li key={i} className="text-red-600">
+                                  {item}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {analysisResults.overallAssessment.nextSteps.length >
+                        0 && (
+                        <div>
+                          <p className="text-blue-600 font-semibold">
+                            Next Steps:
+                          </p>
+                          <ul className="list-disc pl-5">
+                            {analysisResults.overallAssessment.nextSteps.map(
+                              (item, i) => (
+                                <li key={i} className="text-blue-600">
+                                  {item}
                                 </li>
                               )
                             )}

@@ -16,7 +16,10 @@ const MAX_TOKENS = 4000; // Adjust based on your GPT model's limit
 function truncateText(text: string): string {
   // Rough approximation: 1 token ≈ 4 characters
   const maxChars = MAX_TOKENS * 4;
-  if (text.length <= maxChars) return text;
+  if (text.length <= maxChars) {
+    console.log("In the token range");
+    return text;
+  }
 
   // Take first and last portions of the text
   const halfLength = Math.floor(maxChars / 2);
@@ -288,20 +291,33 @@ export const getCrimeElement = internalQuery({
 });
 
 // Add this type for structured analysis results
-export type AnalysisResult = {
-  documentation: {
-    analysis: string;
-    issues: string[];
+export interface ReportAnalysis {
+  documentationAnalysis: {
+    strengths: string[];
+    weaknesses: string[];
+    recommendations: string[];
   };
-  legalStandards: {
-    analysis: string;
-    issues: string[];
+  legalElements: {
+    satisfiedElements: string[];
+    missingElements: string[];
+    recommendations: string[];
   };
-  courtScrutiny: {
-    analysis: string;
-    issues: string[];
+  investigativeQuality: {
+    completedSteps: string[];
+    missingSteps: string[];
+    recommendations: string[];
   };
-};
+  courtPreparation: {
+    strengths: string[];
+    vulnerabilities: string[];
+    recommendations: string[];
+  };
+  overallAssessment: {
+    reportScore: number;
+    primaryIssues: string[];
+    nextSteps: string[];
+  };
+}
 
 export const validateReport = action({
   args: {
@@ -309,7 +325,7 @@ export const validateReport = action({
     selectedCodes: v.optional(v.array(v.any())),
     reportText: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<AnalysisResult> => {
+  handler: async (ctx, args): Promise<ReportAnalysis> => {
     let data;
     if (args.bookingFormId) {
       data = await ctx.runQuery(internal.serve.getFormData, {
@@ -328,53 +344,87 @@ export const validateReport = action({
       messages: [
         {
           role: "system",
-          content: `You are a law enforcement report analysis and writing assistant. Your role is to help analyze, improve, and generate detailed police reports following standard law enforcement documentation protocols. When presented with a report or case details:
+          content: `You are a law enforcement report analysis and writing assistant specializing in analyzing police reports. Evaluate reports based on these key areas:
 
-          1. Documentation Quality:
-          - Completeness and accuracy of factual information
-          - Clarity and professionalism of writing
-          - Proper formatting and organization
+1. DOCUMENTATION ANALYSIS
+- Evidence completeness and chain of custody
+- Chronological clarity and timeline accuracy
+- Proper documentation of dates, times, locations
+- Body camera footage documentation
+- Digital evidence handling
+- Physical evidence processing
+- Interview/statement documentation
 
-          2. Legal Standards Compliance:
-          - Adherence to required legal elements
-          - Proper citation of applicable codes
-          - Support for each legal element
+2. LEGAL ELEMENTS
+- Penal code element satisfaction
+- Probable cause establishment
+- Search/seizure compliance
+- Miranda rights documentation
+- Constitutional considerations
+- Statute of limitations
+- Jurisdiction verification
 
-          3. Court Scrutiny Readiness:
-          - Strength of evidence documentation
-          - Potential defense challenges
-          - Overall legal sufficiency
+3. INVESTIGATIVE THOROUGHNESS
+- Witness identification and statements
+- Follow-up actions documented
+- Evidence collection methods
+- Investigative steps taken
+- Officer observations
+- Scene documentation
+- Technical analysis results
 
-          Provide a structured JSON response with analysis, issues for each standard.
-          Format:
-          {
-            "documentation": {
-              "analysis": "detailed analysis",
-              "issues": ["issue1", "issue2"],
-            },
-            "legalStandards": {
-              "analysis": "detailed analysis",
-              "issues": ["issue1", "issue2"],
-            },
-            "courtScrutiny": {
-              "analysis": "detailed analysis",
-              "issues": ["issue1", "issue2"],
-            }
-          }`,
+4. COURT PREPARATION
+- Evidence strength assessment
+- Potential defense challenges
+- Witness credibility factors
+- Constitutional issues
+- Procedural compliance
+- Documentation gaps
+- Expert testimony needs
+
+Provide a structured JSON response:
+{
+  "documentationAnalysis": {
+    "strengths": ["list of strong points"],
+    "weaknesses": ["list of weak points"],
+    "recommendations": ["specific improvements"]
+  },
+  "legalElements": {
+    "satisfiedElements": ["elements met"],
+    "missingElements": ["elements not met"],
+    "recommendations": ["specific improvements"]
+  },
+  "investigativeQuality": {
+    "completedSteps": ["steps taken"],
+    "missingSteps": ["steps needed"],
+    "recommendations": ["specific improvements"]
+  },
+  "courtPreparation": {
+    "strengths": ["strong points"],
+    "vulnerabilities": ["weak points"],
+    "recommendations": ["specific improvements"]
+  },
+  "overallAssessment": {
+    "reportScore": "1-10 rating",
+    "primaryIssues": ["critical issues"],
+    "nextSteps": ["immediate actions needed"]
+  }
+}`,
         },
         {
           role: "user",
           content: `Analyze this case with the following context:
-          ${args.selectedCodes ? `Penal Codes: ${JSON.stringify(args.selectedCodes, null, 2)}` : ""}
-          ${data ? `Additional data of the PROBABLE CAUSE and someother info: ${JSON.stringify(data, null, 2)}` : ""}
-          ${reportText ? `Report Text: ${reportText}` : ""}`,
+      ${args.selectedCodes ? `PENAL CODES: ${JSON.stringify(args.selectedCodes, null, 2)}` : ""}
+      ${data ? `PROBABLE CAUSE AND ADDITIONAL INFO: ${JSON.stringify(data, null, 2)}` : ""}
+      ${reportText ? `REPORT TEXT: ${reportText}` : ""}`,
         },
       ],
+      temperature: 0.7,
     });
     const content = response.choices[0].message.content;
     if (!content) throw new Error("no conten is created");
 
-    return JSON.parse(content) as AnalysisResult;
+    return JSON.parse(content) as ReportAnalysis;
   },
 });
 
