@@ -57,12 +57,28 @@ export function ReportValidator() {
 
       if (
         file.type ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        file.type === "application/msword"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ) {
+        // .docx handling
         const buffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer: buffer });
         text = result.value;
+      } else if (file.type === "application/msword") {
+        // .doc handling
+        const reader = new FileReader();
+        text = await new Promise((resolve, reject) => {
+          reader.onload = (e) => {
+            try {
+              const binaryString = e.target?.result as string;
+              // Additional processing for .doc files can be added here
+              resolve(binaryString);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = (err) => reject(err);
+          reader.readAsBinaryString(file);
+        });
       } else {
         // Fallback for txt files
         const reader = new FileReader();
@@ -154,7 +170,7 @@ export function ReportValidator() {
           <div className="flex items-center gap-4 mt-2">
             <Input
               type="file"
-              accept=".txt,.doc,.docx"
+              accept=".txt,.docx"
               onChange={handleFileUpload}
               className="max-w-xs"
             />
