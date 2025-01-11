@@ -26,8 +26,8 @@ export default internalAction(async (ctx) => {
     (pc) => pc["M/F"] === "M" || pc["M/F"] === "F"
   );
 
-  // Process in batches of 500
-  const BATCH_SIZE = 500;
+  // Process in batches of 200
+  const BATCH_SIZE = 200;
   const totalBatches = Math.ceil(validEntries.length / BATCH_SIZE);
 
   for (let i = 0; i < totalBatches; i++) {

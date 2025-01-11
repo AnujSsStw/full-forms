@@ -11,7 +11,7 @@ export default async function BookingFormPage({
 }) {
   const d = await (
     await fetch(
-      `https://healthy-kangaroo-437.convex.site/get-data/${params.id}`,
+      `${process.env.NEXT_PUBLIC_CONVEX_HTTP_URL!}/get-data/${params.id}`,
       {
         cache: "no-store",
       }
