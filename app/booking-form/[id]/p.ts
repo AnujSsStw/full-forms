@@ -18,7 +18,7 @@ export async function fillBookingForm(data: {
 }) {
   try {
     const response = await fetch(
-      "https://healthy-kangaroo-437.convex.cloud/api/storage/b220244c-0754-4b56-bc7a-4dacb1b2226f"
+      `${process.env.NEXT_PUBLIC_CONVEX_DEPLOYMENT_URL}/api/storage/${process.env.NEXT_PUBLIC_BOOKING_FORM_ID}`
     );
     const pdfBytes = await response.arrayBuffer();
 

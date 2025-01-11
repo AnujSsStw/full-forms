@@ -9,8 +9,7 @@ export async function fillCauseForm(
 ) {
   try {
     const response = await fetch(
-      "https://healthy-kangaroo-437.convex.cloud/api/storage/ea94a37f-398c-4eec-8129-55e081a090a5"
-      // "https://healthy-kangaroo-437.convex.cloud/api/storage/a5f4803a-47dd-4bec-a2aa-8fd830a5f510"
+      `${process.env.NEXT_PUBLIC_CONVEX_DEPLOYMENT_URL}/api/storage/${process.env.NEXT_PUBLIC_CAUSE_FORM_ID}`
     );
     const pdfBytes = await response.arrayBuffer();
 
@@ -164,6 +163,7 @@ async function signature(pdfDoc: PDFDocument, base64Sign: string) {
     const signatureData = Buffer.from(base64Sign.split(",")[1], "base64");
 
     // Embed the PNG signature
+    // @ts-ignore
     const signatureImage = await pdfDoc.embedPng(signatureData);
 
     const pages = pdfDoc.getPages();
