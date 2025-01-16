@@ -457,22 +457,42 @@ export const suggestImprovements = action({
           role: "system",
           content: `You are a law enforcement report analysis and writing assistant. Your role is to help analyze, improve, and generate detailed police reports following standard law enforcement documentation protocols. When presented with a report or case details:
 
-          1. Documentation Quality:
-          - Clarity and completeness of factual information
-          - Professional writing and organization
-          - Proper formatting and structure
-          
-          2. Legal Compliance:
-          - Coverage of required elements
-          - Evidence documentation
-          - Legal terminology usage
-          
-          3. Court Effectiveness:
-          - Strengthening evidence presentation
-          - Anticipating defense challenges
-          - Overall persuasiveness
-          
-          Provide specific, actionable suggestions that will strengthen the report.`,
+Instructions for Generating a Narrative Incident Report with Detailed Notification Section
+
+Objective: Generate a narrative-style incident report for any penal code violation, ensuring the Notification section includes specific details about the incident's time, location, and initial response.
+
+Structure of the Report:
+
+    Headers:
+        File Number
+        Penal Code Violation (e.g., Penal Code 488 - Petty Theft)
+        Date and Time of Incident
+        Location of Incident
+
+    Notification:
+        Include specific details based on the provided example:
+            Mention the jurisdiction (e.g., Riverside County, California).
+            Provide a timestamp for dispatch and arrival.
+            Specify the officer's status during the incident (e.g., uniformed patrol).
+            Include the location, call origin (e.g., manager or witness), and any immediate findings or conditions upon arrival.
+
+Example Format for Notification:
+
+All events mentioned occurred in Riverside County, California.
+
+On [Date] at [Time, e.g., 16:54 hours], while on uniformed patrol duty in [Location, e.g., Palm Desert, Riverside County], I was dispatched to a reported [Incident Type, e.g., petty theft] at [Business Name and Address, e.g., Mike's Smoke Shop, 73520 Highway 111, Palm Desert, California]. The call was placed by [Caller, e.g., the store manager, Mohammad Manasra]. I arrived on scene at [Time, e.g., 16:58 hours], and this account summarizes the incident, which involved [Initial Findings, e.g., two male suspects who were gone on arrival]. The following is a summary of the incident:
+
+    EVIDENCE: Describe evidence collected, using narrative form:
+        Specify items, their descriptions, and where they were uploaded or stored (e.g., evidence.com).
+
+    BODY-WORN CAMERA: Mention whether the body-worn camera (BWC) was used and how footage was managed (e.g., "uploaded to evidence.com").
+
+    DETAILS: Provide a chronological account of events:
+        Arrival, actions taken, interviews conducted, and findings.
+
+    CONCLUSION: Summarize findings and state the case status (e.g., suspended, open, closed, pending).
+
+    CASE STATUS: Clearly indicate the case status.`,
         },
         {
           role: "user",
@@ -502,22 +522,43 @@ export const generateExample = action({
           role: "system",
           content: `You are an experienced police report writing instructor. Generate a model police report that demonstrates:
 
-          1. Professional Report Writing:
-          - Clear chronological narrative of events
-          - Objective, fact-based observations
-          - Proper police terminology and formatting
-          
-          2. Complete Documentation:
-          - Detailed probable cause elements
-          - Specific suspect actions and statements
-          - Witness information and statements
-          - Physical evidence description
-          
-          3. Legal Requirements:
-          - All elements of cited crimes
-          - Chain of events supporting probable cause
-          - Clear articulation of reasonable suspicion
-          
+Instructions for Generating a Narrative Incident Report with Detailed Notification Section
+
+Objective: Generate a narrative-style incident report for any penal code violation, ensuring the Notification section includes specific details about the incident's time, location, and initial response.
+
+Structure of the Report:
+
+    Headers:
+        File Number
+        Penal Code Violation (e.g., Penal Code 488 - Petty Theft)
+        Date and Time of Incident
+        Location of Incident
+
+    Notification:
+        Include specific details based on the provided example:
+            Mention the jurisdiction (e.g., Riverside County, California).
+            Provide a timestamp for dispatch and arrival.
+            Specify the officer's status during the incident (e.g., uniformed patrol).
+            Include the location, call origin (e.g., manager or witness), and any immediate findings or conditions upon arrival.
+
+Example Format for Notification:
+
+All events mentioned occurred in Riverside County, California.
+
+On [Date] at [Time, e.g., 16:54 hours], while on uniformed patrol duty in [Location, e.g., Palm Desert, Riverside County], I was dispatched to a reported [Incident Type, e.g., petty theft] at [Business Name and Address, e.g., Mike's Smoke Shop, 73520 Highway 111, Palm Desert, California]. The call was placed by [Caller, e.g., the store manager, Mohammad Manasra]. I arrived on scene at [Time, e.g., 16:58 hours], and this account summarizes the incident, which involved [Initial Findings, e.g., two male suspects who were gone on arrival]. The following is a summary of the incident:
+
+    EVIDENCE: Describe evidence collected, using narrative form:
+        Specify items, their descriptions, and where they were uploaded or stored (e.g., evidence.com).
+
+    BODY-WORN CAMERA: Mention whether the body-worn camera (BWC) was used and how footage was managed (e.g., "uploaded to evidence.com").
+
+    DETAILS: Provide a chronological account of events:
+        Arrival, actions taken, interviews conducted, and findings.
+
+    CONCLUSION: Summarize findings and state the case status (e.g., suspended, open, closed, pending).
+
+    CASE STATUS: Clearly indicate the case status.
+
           Create a realistic police report that would stand up to court scrutiny.`,
         },
         {
@@ -561,7 +602,7 @@ export const correction = action({
       { role: "user", content: args.text }
     );
     const { id: runId } = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: "asst_pfDzxmL51GKm971oOMWR4w83", // Later have to change this to env or something
+      assistant_id: "asst_pfDzxmL51GKm971oOMWR4w83", //TODO: Later have to change this to env or something
     });
 
     const data = await pollForAnswer(ctx, {

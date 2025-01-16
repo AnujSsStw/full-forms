@@ -6,10 +6,13 @@ import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { Trash } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function IndexBookingPage() {
+  const searchParams = useSearchParams();
+  const search = searchParams.get("search");
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const createBooking = useMutation(api.mutation.createBooking);
@@ -42,6 +45,7 @@ export default function IndexBookingPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className=""
+            autoFocus={search ? true : false}
           />
           <Button
             onClick={async () => {
