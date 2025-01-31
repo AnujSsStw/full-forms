@@ -165,10 +165,12 @@ const downloadPdf = ({
   color,
   pdfbytes,
   arrest_agency_name,
+  name,
 }: {
   pdfbytes: Uint8Array;
   arrest_agency_name?: string;
   color: string;
+  name?: string;
 }) => {
   const blob = new Blob([pdfbytes], { type: "application/pdf" });
 
@@ -178,7 +180,7 @@ const downloadPdf = ({
   // Create a temporary link element
   const link = document.createElement("a");
   link.href = url;
-  link.download = `booking-form-${arrest_agency_name || "download"}-${color === "none" ? "" : color}.pdf`; // Set the filename
+  link.download = `${name ? name : "booking-form"}-${arrest_agency_name || "download"}-${color === "none" ? "" : color}.pdf`; // Set the filename
 
   // Append to document, click, and cleanup
   document.body.appendChild(link);
@@ -216,6 +218,7 @@ const printNewForm = async ({
   downloadPdf({
     color: "none",
     pdfbytes: d,
+    name: formType,
   });
 };
 

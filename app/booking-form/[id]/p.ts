@@ -660,15 +660,6 @@ export const fillAdultDispositionForm = async (data: {
       .getTextField("form1[0].#subform[0].hgt[0]")
       .setText(data.formData.height); /* height */
     form
-      .getTextField("form1[0].#subform[0].wgt[0]")
-      .setText(data.formData.weight); /* weight */
-    form
-      .getTextField("form1[0].#subform[0].hair[0]")
-      .setText(data.formData.hair); /* hair */
-    form
-      .getTextField("form1[0].#subform[0].eyes[0]")
-      .setText(data.formData.eyes); /* eyes */
-    form
       .getTextField("form1[0].#subform[0].crime[0]")
       .setText(data.formData.agency_case_number);
 
