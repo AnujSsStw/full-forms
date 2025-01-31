@@ -1,11 +1,6 @@
 "use client";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
+import { PenalCodeSearch } from "@/components/penal-code-search";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,15 +33,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
 import { PenaltyQueryResult } from "@/convex/pc";
+import { cn } from "@/lib/utils";
 import { BookingFormState, FormEntry } from "@/types/forms";
-import { useAction, useMutation } from "convex/react";
-import { Search } from "lucide-react";
+import { useMutation } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { fillBookingForm, mergePDFs } from "./p";
-import { title } from "process";
-import { cn } from "@/lib/utils";
-import { PenalCodeSearch } from "@/components/penal-code-search";
+import {
+  fillAdultDispositionForm,
+  fillBookingForm,
+  fillDeclarationOfArrestForm,
+  mergePDFs,
+} from "./p";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -190,6 +187,36 @@ const downloadPdf = ({
 
   // Clean up the URL object
   URL.revokeObjectURL(url);
+};
+
+const printNewForm = async ({
+  formType,
+  entries,
+  formData,
+}: {
+  entries: FormEntry[];
+  formData: BookingFormState;
+  formType: "adult" | "arrest";
+}) => {
+  let d;
+  if (formType === "adult") {
+    d = await fillAdultDispositionForm({
+      charges: entries,
+      formData,
+      color_legend: "none",
+    });
+  } else if (formType === "arrest") {
+    d = await fillDeclarationOfArrestForm({
+      charges: entries,
+      formData,
+    });
+  }
+
+  if (!d) return;
+  downloadPdf({
+    color: "none",
+    pdfbytes: d,
+  });
 };
 
 export function BookingForm({
@@ -1950,6 +1977,39 @@ export function BookingForm({
                 className=""
               >
                 Print (Combined)
+              </Button>
+            </div>
+
+            {/* new form */}
+            <div>
+              <Button
+                variant={"link"}
+                type="button"
+                onClick={async () => {
+                  await printNewForm({
+                    entries,
+                    formData,
+                    formType: "arrest",
+                  });
+                }}
+                className=""
+              >
+                Print (Arrest Warrant)
+              </Button>
+
+              <Button
+                variant={"link"}
+                type="button"
+                onClick={async () => {
+                  await printNewForm({
+                    entries,
+                    formData,
+                    formType: "adult",
+                  });
+                }}
+                className=""
+              >
+                Print (Adult Disposition Form)
               </Button>
             </div>
             <div className="w-full flex gap-1">

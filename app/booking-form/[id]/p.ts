@@ -605,3 +605,143 @@ export const mergePDFs = async (pdfs: any[]) => {
   }
   return await pdfDoc.save();
 };
+
+export const fillAdultDispositionForm = async (data: {
+  formData: BookingFormState;
+  charges: FormEntry[];
+  color_legend: (typeof COLOR_LEGEND)[number]["label"];
+}) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_CONVEX_DEPLOYMENT_URL}/api/storage/${process.env.NEXT_PUBLIC_ADULT_DIS_FORM_ID}`
+    );
+    const pdfBytes = await response.arrayBuffer();
+
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const form = pdfDoc.getForm();
+
+    // if some data is missing, use empty string
+    (Object.keys(data.formData) as (keyof BookingFormState)[]).forEach(
+      (key) => {
+        if (!data.formData[key] && typeof data.formData[key] !== "boolean") {
+          // @ts-ignore
+          data.formData[key] = "" as any;
+        }
+      }
+    );
+
+    form
+      .getTextField("form1[0].#subform[0].Table1[0].Row2[0].Cell5[0]")
+      .setText(data.charges[0].charges);
+    if (data.formData.sex === "female")
+      form.getDropdown("form1[0].#subform[0].sex[0]").select("F");
+    else if (data.formData.sex === "male")
+      form.getDropdown("form1[0].#subform[0].sex[0]").select("M");
+    else form.getDropdown("form1[0].#subform[0].sex[0]").select("X");
+    form
+      .getTextField("form1[0].#subform[0].race[0]")
+      .setText(data.formData.race);
+    form
+      .getTextField("form1[0].#subform[0].agency[0]")
+      .setText(data.formData.arrest_agency);
+    form
+      .getTextField("Subject Name Last FirstRow1")
+      .setText(
+        `${data.formData.last_name} ${data.formData.first_name} ${data.formData.middle_name}`
+      );
+    form.getTextField("DOB 1").setText(data.formData.dob);
+    form
+      .getTextField("form1[0].#subform[0].SSN[0]")
+      .setText(data.formData.ssn.replaceAll("-", ""));
+    form
+      .getTextField("form1[0].#subform[0].DL[0]")
+      .setText(data.formData.drivers_license);
+    form
+      .getTextField("form1[0].#subform[0].hgt[0]")
+      .setText(data.formData.height); /* height */
+    form
+      .getTextField("form1[0].#subform[0].wgt[0]")
+      .setText(data.formData.weight); /* weight */
+    form
+      .getTextField("form1[0].#subform[0].hair[0]")
+      .setText(data.formData.hair); /* hair */
+    form
+      .getTextField("form1[0].#subform[0].eyes[0]")
+      .setText(data.formData.eyes); /* eyes */
+    form
+      .getTextField("form1[0].#subform[0].crime[0]")
+      .setText(data.formData.agency_case_number);
+
+    return await pdfDoc.save();
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
+
+export const fillDeclarationOfArrestForm = async (data: {
+  formData: BookingFormState;
+  charges: FormEntry[];
+}) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_CONVEX_DEPLOYMENT_URL}/api/storage/${process.env.NEXT_PUBLIC_DECLARATION_ARREST_FORM_ID}`
+    );
+    const pdfBytes = await response.arrayBuffer();
+
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const form = pdfDoc.getForm();
+
+    // if some data is missing, use empty string
+    (Object.keys(data.formData) as (keyof BookingFormState)[]).forEach(
+      (key) => {
+        if (!data.formData[key] && typeof data.formData[key] !== "boolean") {
+          // @ts-ignore
+          data.formData[key] = "" as any;
+        }
+      }
+    );
+
+    // declaration arrest warrant.pdf
+    form.getTextField("Text.0.0").setText(`
+      ${data.formData.last_name}, ${data.formData.first_name} ${data.formData.middle_name}
+      `); // defendant name
+    form.getTextField("Text.0.1").setText(data.formData.agency_case_number); // case no.
+    form.getTextField("Text.1.0").setText(data.formData.arrest_agency); // jail location
+    // data.formData.arrest_time is of type="datetime-local"
+    form
+      .getTextField("Text.1.1")
+      .setText(
+        data.formData.arrest_time
+          ? dayjs(data.formData.arrest_time).format("MM/DD/YYYY")
+          : ""
+      ); // date
+    form
+      .getTextField("Text.2.0")
+      .setText(
+        data.formData.arrest_time
+          ? dayjs(data.formData.arrest_time).format("HH:mm")
+          : ""
+      ); // time
+    form.getTextField("Text.2.1").setText(data.formData.agency_case_number); // agency case number
+    form.getTextField("Text.3.0").setText(data.formData.arrest_agency); // arresting agency
+    form.getTextField("Text.3.1").setText(data.formData.arrest_location); // arrest location
+    form.getTextField("Text.4.1").setText(data.formData.sex); // sex
+    form.getTextField("Text.5.0").setText(data.formData.race); // race
+    const dob = dayjs(data.formData.dob);
+    form.getTextField("Text.5.1").setText(dob.format("MM/DD/YYYY")); // dob
+    form.getTextField("Text.6.0").setText(data.formData.eyes); // eyes
+    form.getTextField("Text.6.1").setText(data.formData.hair); // hair
+    form.getTextField("Text.7.0").setText(data.formData.height); // height
+    form.getTextField("Text.7.1").setText(data.formData.weight); // weight
+    form.getTextField("Text.8.0").setText(data.formData.drivers_license); // drivers license
+    form
+      .getTextField("Text.8.1")
+      .setText(
+        `${data.formData.street}, ${data.formData.city}, ${data.formData.state}, ${data.formData.zip}`
+      ); // address
+
+    return await pdfDoc.save();
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
