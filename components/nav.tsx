@@ -18,6 +18,8 @@ export function Navigation({}: {}) {
   const isbookingFormPath = pathname.includes("/booking-form");
   const isCauseFormPath = pathname.includes("/cause-form");
   const isReportPath = pathname.includes("/report");
+  const isHPath = pathname.includes("/h");
+  const isArrestDeclarationPath = pathname.includes("/arrest-declaration");
 
   return (
     <nav className="sticky top-0 z-50 flex w-full flex-col border-b border-border bg-card px-6">
@@ -118,6 +120,42 @@ export function Navigation({}: {}) {
             href={"/report"}
           >
             Report
+          </Link>
+        </div>
+        <div
+          className={cn(
+            `flex h-12 items-center border-b-2`,
+            isHPath ? "border-primary" : "border-transparent"
+          )}
+        >
+          <Link
+            className={cn(
+              `${buttonVariants({
+                variant: "ghost",
+                size: "sm",
+              })} text-primary/80`
+            )}
+            href={"/h"}
+          >
+            Humanize
+          </Link>
+        </div>
+        <div
+          className={cn(
+            `flex h-12 items-center border-b-2`,
+            isArrestDeclarationPath ? "border-primary" : "border-transparent"
+          )}
+        >
+          <Link
+            className={cn(
+              `${buttonVariants({
+                variant: "ghost",
+                size: "sm",
+              })} text-primary/80`
+            )}
+            href={"/arrest-declaration"}
+          >
+            Arrest Declaration
           </Link>
         </div>
       </div>

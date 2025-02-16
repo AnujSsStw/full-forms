@@ -21,6 +21,8 @@ import mammoth from "mammoth";
 import { useState } from "react";
 import { TextEditor } from "./LineNumberEditor";
 import { ValidationResults } from "./ValidationResults";
+import { VirtualizedCombobox } from "@/components/virtualized-combobox";
+import { PenalCode } from "@/lib/pc";
 
 export type SELECTCODE = {
   _id: Id<"crimeElement">;
@@ -124,6 +126,24 @@ export function ReportValidator() {
               setPenalCode([]);
             }}
           />
+
+          {/* <VirtualizedCombobox
+            options={PenalCode}
+            searchPlaceholder="Search for a penal code"
+            onSelect={(value) => {
+              console.log(value);
+              const data = await getCrimeElement({
+                pcId: value._id,
+              });
+
+              const crimeElement = {
+                ...value,
+                ...data,
+              };
+
+              setSelectedCode((p) => [...p, crimeElement]);
+            }}
+          /> */}
         </CardContent>
       </Card>
 
