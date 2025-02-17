@@ -127,7 +127,7 @@ export function ReportValidator() {
             }}
           />
 
-          {/* <VirtualizedCombobox
+          <VirtualizedCombobox
             options={PenalCode}
             searchPlaceholder="Search for a penal code"
             onSelect={(value) => {
@@ -143,7 +143,7 @@ export function ReportValidator() {
 
               setSelectedCode((p) => [...p, crimeElement]);
             }}
-          /> */}
+          />
         </CardContent>
       </Card>
 
