@@ -42,6 +42,7 @@ export function ReportValidator() {
     EditorState.createEmpty()
   );
   const [penalCodes, setPenalCode] = useState<PenaltyQueryResult>();
+  const [loading, setLoading] = useState(false);
   const [lineNumbers, setLineNumbers] = useState(true);
   const getCrimeElement = useAction(api.serve.crimeElement);
   const getCaseNo = useQuery(api.query.getAllCaseNo);
@@ -106,7 +107,7 @@ export function ReportValidator() {
           <CardTitle>Legal Report Validator</CardTitle>
         </CardHeader>
         <CardContent>
-          <PenalCodeSearch
+          {/* <PenalCodeSearch
             setPenalCode={setPenalCode}
             penalCodes={penalCodes}
             handleAddPenalCode={async (idx) => {
@@ -125,15 +126,16 @@ export function ReportValidator() {
               setSelectedCode((p) => [...p, crimeElement]);
               setPenalCode([]);
             }}
-          />
+          /> */}
+          <div className="flex justify-center">
 
           <VirtualizedCombobox
             options={PenalCode}
             searchPlaceholder="Search for a penal code"
-            onSelect={(value) => {
-              console.log(value);
+            onSelect={async (value) => {
+              setLoading(true);
               const data = await getCrimeElement({
-                pcId: value._id,
+                pcId: value._id as Id<"pc">,
               });
 
               const crimeElement = {
@@ -141,9 +143,16 @@ export function ReportValidator() {
                 ...data,
               };
 
-              setSelectedCode((p) => [...p, crimeElement]);
+              setSelectedCode((p: SELECTCODE[]) => [
+                ...p,
+                crimeElement as SELECTCODE,
+              ]);
+              setLoading(false);
             }}
           />
+          </div>
+
+          {loading && <div className="text-center">Loading...</div>}
         </CardContent>
       </Card>
 
@@ -154,7 +163,7 @@ export function ReportValidator() {
         <CardContent>
           {selectedCode &&
             selectedCode.map((v, idx) => (
-              <div key={idx} className="mb-4">
+              <div key={idx} className="mb-4 border-b pb-4">
                 <h3 className="font-bold mb-2">
                   {v.code_number} - {v.narrative}
                 </h3>

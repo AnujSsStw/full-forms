@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { PenalCode } from "@/lib/pc";
 import { cn } from "@/lib/utils";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -184,26 +185,18 @@ const VirtualizedCommand = ({
   );
 };
 
-export type PenalCode = {
-  code: string;
-  type: string;
-  narrative: string;
-  mf: string;
-  id: number;
-};
-
 interface VirtualizedComboboxProps {
-  options: PenalCode[];
+  options: typeof PenalCode;
   searchPlaceholder?: string;
   width?: string;
   height?: string;
-  onSelect?: (value: PenalCode) => void;
+  onSelect?: (value: (typeof PenalCode)[0]) => void;
 }
 
 export function VirtualizedCombobox({
   options,
   searchPlaceholder = "Search items...",
-  width = "400px",
+  width = "800px",
   height = "400px",
   onSelect,
 }: VirtualizedComboboxProps) {
@@ -213,7 +206,7 @@ export function VirtualizedCombobox({
   >(undefined);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -225,8 +218,8 @@ export function VirtualizedCombobox({
           }}
         >
           {selectedOption
-            ? `${options.find((option) => option.code === selectedOption)?.code} - ${
-                options.find((option) => option.code === selectedOption)
+            ? `${options.find((option) => option.code_number === selectedOption)?.code_number} - ${
+                options.find((option) => option.code_number === selectedOption)
                   ?.narrative
               }`
             : searchPlaceholder}
@@ -237,8 +230,8 @@ export function VirtualizedCombobox({
         <VirtualizedCommand
           height={height}
           options={options.map((option) => ({
-            value: option.code.toString(),
-            label: `${option.code} - ${option.narrative}`,
+            value: option.code_number.toString(),
+            label: `${option.code_number} - ${option.narrative}`,
           }))}
           placeholder={searchPlaceholder}
           selectedOption={selectedOption?.toString() ?? ""}
@@ -248,7 +241,7 @@ export function VirtualizedCombobox({
             );
             setOpen(false);
             const found = options.find(
-              (option) => option.code.toString() === currentValue
+              (option) => option.code_number.toString() === currentValue
             );
             if (found) onSelect?.(found);
           }}
