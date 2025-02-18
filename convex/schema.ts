@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { createArrestDeclaration } from "./mutation";
 
 export default defineSchema({
   crimeElement: defineTable({
@@ -30,6 +31,9 @@ export default defineSchema({
   cause: defineTable({
     data: v.any(),
     isFirstMsgId: v.optional(v.id("messages")),
+  }),
+  arrestDeclaration: defineTable({
+    data: v.any(),
   }),
   calcrim: defineTable({
     text: v.string(),

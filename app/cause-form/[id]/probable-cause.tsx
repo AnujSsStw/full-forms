@@ -4,16 +4,15 @@ import { Textarea } from "@/components/ui/textarea";
 export function ProbableCause({
   value,
   handleInputChange,
+  label,
 }: {
   value: string;
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  label: string;
 }) {
   return (
     <div>
-      <Label htmlFor="probable-cause">
-        I deem that there is probable cause to believe that the crime(s) as
-        described have been committed by the arrestee:
-      </Label>
+      <Label htmlFor="probable-cause">{label}</Label>
       <div className="flex">
         <Textarea
           id="probable-cause"

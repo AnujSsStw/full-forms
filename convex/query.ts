@@ -50,3 +50,18 @@ export const getAllCaseNo = query({
     }));
   },
 });
+
+export const getAllarrestDeclaration = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("arrestDeclaration").collect();
+  },
+});
+
+export const getArrestDeclaration = query({
+  args: {
+    id: v.string(),
+  },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id as Id<"arrestDeclaration">);
+  },
+});

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { PDFDocument } from "pdf-lib";
-import { ArrestDeclarationFormData } from "./page";
+import { ArrestDeclarationFormData } from "./[id]/page";
 
 export async function fillArrestDeclarationForm(
   data: ArrestDeclarationFormData

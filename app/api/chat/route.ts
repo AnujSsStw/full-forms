@@ -16,12 +16,17 @@ export async function POST(req: Request) {
 
     // Process with Claude directly
     const claudeResult = streamText({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4o-mini"),
       messages: [
         {
           role: "system",
-          content:
-            "Please review and refine the above response, making it more human-like and ensuring accuracy",
+          content: `Please review and refine the above response, making it more human-like and ensuring accuracy
+            ✅ Vary Sentence Structure – AI-generated text often has a predictable rhythm. Introducing a mix of short and long sentences will improve authenticity.
+✅ Use More Natural Transitions – Adding slight imperfections in phrasing (like minor stylistic variations) makes it more human-like.
+✅ Introduce First-Person or Institutional References (if allowed) – Phrases like “This research will assess…” or “Our study will focus on…” increase authenticity.
+✅ Include Unique Perspectives – AI tends to summarize existing ideas without injecting insightful commentary. Adding real-world law enforcement insights or officer anecdotes can help.
+dont't use it looks like or it seems like. Just say it is.
+            `,
         },
         ...messages,
       ],

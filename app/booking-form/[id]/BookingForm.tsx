@@ -242,24 +242,11 @@ export function BookingForm({
     warrantNumber: "",
     bail: "",
   });
-  // const [queryByCode, setQueryByCode] = useState(false);
-  const [penalCodes, setPenalCode] = useState<PenaltyQueryResult>();
-  // PenalCode.map((pc) => {
-  //   return {
-  //     code_number: pc["CODE #"] as string,
-  //     codeType: pc["CODE TYPE"] as string,
-  //     m_f: pc["M/F"] as "M" | "F",
-  //     narrative: pc.NARRATIVE,
-  //   };
-  // }).slice(0, 10)
-  // const [searchTerm, setSearchTerm] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const [mounted, setMounted] = useState(false);
   const [colorLegend, setColorLegend] = useState<string[]>([]);
 
-  // const q = useAction(api.pc.getPenalty);
   const updateBookingEntry = useMutation(api.mutation.updateBooking);
-  // const pdfUrl = useQuery(api.query.getBookingPdf);
   const createCause = useMutation(api.mutation.createCauseWithBooking);
   const addFirstMessage = useMutation(api.message.addMsg);
 
@@ -277,17 +264,6 @@ export function BookingForm({
       setMounted(true);
     }
   }, [bookingForm]);
-
-  // useEffect(() => {
-  //   if (searchTerm.length < 3 && queryByCode === false) return;
-
-  //   debounced(searchTerm);
-  // }, [searchTerm]);
-
-  // const debounced = useDebouncedCallback(async (value) => {
-  //   const data = await q({ query: value, queryByCode });
-  //   setPenalCode(data);
-  // }, 1000);
 
   const debouncedBooking = useDebouncedCallback(
     async (value, includeCharges) => {
@@ -360,14 +336,6 @@ export function BookingForm({
   };
 
   const handleColorLegendChange = (check: any, label: string) => {
-    // if (label === "all") {
-    //   if (check) {
-    //     setColorLegend(COLOR_LEGEND.map((v) => v.label));
-    //   } else {
-    //     setColorLegend([]);
-    //   }
-    //   return;
-    // }
     if (check) {
       setColorLegend([...colorLegend, label]);
     } else {
@@ -716,10 +684,6 @@ export function BookingForm({
                       const dob = new Date(e.target.value);
                       const today = new Date();
                       const age = today.getFullYear() - dob.getFullYear();
-                      // setFormData((prevData) => ({
-                      //   ...prevData,
-                      //   age: age.toString(),
-                      // }));
 
                       setFormData((prevData) => {
                         const newData = {
@@ -760,13 +724,6 @@ export function BookingForm({
                     placeholder="5'10&quot;"
                     maxLength={6}
                   />
-                  {/* <Input
-                    type="text"
-                    id="height"
-                    name="height"
-                    value={formData.height}
-                    onChange={handleInputChange}
-                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight</Label>
@@ -801,13 +758,6 @@ export function BookingForm({
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
-
-                  {/* <Input type="text"
-                    id="hair"
-                    name="hair"
-                    value={formData.hair}
-                    onChange={handleInputChange}
-                  /> */}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -833,13 +783,6 @@ export function BookingForm({
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
-                  {/* <Input
-                    type="text"
-                    id="eyes"
-                    name="eyes"
-                    value={formData.eyes}
-                    onChange={handleInputChange}
-                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="place_of_birth">Place of Birth</Label>
@@ -892,14 +835,6 @@ export function BookingForm({
                     placeholder="555-55-5555"
                     maxLength={11}
                   />
-
-                  {/* <Input
-                    type="text"
-                    id="ssn"
-                    name="ssn"
-                    value={formData.ssn}
-                    onChange={handleInputChange}
-                  /> */}
                 </div>
               </div>
             </div>
@@ -1027,13 +962,6 @@ export function BookingForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  {/* <Input
-                    type="text"
-                    id="arrest_agency"
-                    name="arrest_agency"
-                    value={formData.arrest_agency}
-                    onChange={handleInputChange}
-                  /> */}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="agency_case_number">Agency Case Number</Label>
@@ -1458,25 +1386,6 @@ export function BookingForm({
                 Wrap Restraint Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="wrap_restraint"
-                    name="wrap_restraint"
-                    checked={formData.wrap_restraint}
-                    onCheckedChange={(checked) =>
-                      handleInputChange({
-                        target: {
-                          name: "wrap_restraint",
-                          type: "checkbox",
-                          checked,
-                        },
-                      })
-                    }
-                  />
-                  <Label htmlFor="wrap_restraint">
-                    Was arrestee placed in WRAP Restraint?
-                  </Label>
-                </div> */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="wrap_restraint_force"

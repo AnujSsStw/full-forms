@@ -60,23 +60,12 @@ export default function MatrixTerminal() {
       console.error("Error processing file:", error);
       alert("Error processing file. Please try again.");
     }
-    // if (file) {
-    //   const reader = new FileReader();
-    //   reader.onload = (e) => {
-    //     const content = e.target?.result as string;
-    //     setFileContent(content);
-    //     setInput(content);
-    //   };
-    //   reader.readAsText(file);
-    // }
   };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("onSubmit");
     const content = fileContent || input;
     if (content) {
-      console.log("content", content);
       handleInputChange({
         target: {
           value: content,
@@ -89,6 +78,18 @@ export default function MatrixTerminal() {
       } as React.ChangeEvent<HTMLInputElement>);
       setFileContent("");
     }
+  };
+
+  const handleDownload = (content: string, index: number) => {
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ai-response-${index + 1}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -128,15 +129,29 @@ export default function MatrixTerminal() {
             </form>
           </div>
           <div className="flex-1">
-            <div className="h-[calc(100vh-12rem)] overflow-y-auto border border-green-500 p-2">
+            <div className="h-[calc(100vh-13rem)] overflow-y-auto border border-green-500 p-2">
               {messages
                 .filter((m) => m.role === "assistant")
-                .map((m) => (
-                  <div key={m.id} className="mb-2">
+                .map((m, index) => (
+                  <div key={m.id} className="mb-2 flex items-start gap-2">
                     <span>{m.content}</span>
                   </div>
                 ))}
             </div>
+            <Button
+              onClick={() =>
+                handleDownload(
+                  messages
+                    .filter((m) => m.role === "assistant")
+                    .map((m) => m.content)
+                    .join("\n"),
+                  messages.length
+                )
+              }
+              className="m-2 bg-green-500 text-black hover:bg-green-600 ml-2 px-2 py-1 text-sm"
+            >
+              Download
+            </Button>
           </div>
         </div>
       </div>

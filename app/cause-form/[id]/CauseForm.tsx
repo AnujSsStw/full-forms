@@ -490,6 +490,7 @@ export function RiversideCountySheriffForm({
             <ProbableCause
               value={formData["probable-cause"]}
               handleInputChange={handleInputChange}
+              label="I deem that there is probable cause to believe that the crime(s) as described have been committed by the arrestee:"
             />
           </div>
 

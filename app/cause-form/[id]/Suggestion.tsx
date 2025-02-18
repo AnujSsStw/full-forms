@@ -15,18 +15,22 @@ import { useMutation, useQuery } from "convex/react";
 import { Copy, PlusIcon, SendIcon, TrashIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const welcomeMessage = "Welcome to the Cause Form! How can I help you?";
+const welcomeMessage = "Welcome! How can I help you?";
 
 export function CauseFormIdSuggestion({
   data,
   sessionId,
   handleCauseFom,
   firstMsgId,
+  label,
+  type,
 }: {
   data: any;
   sessionId: string;
   firstMsgId: string;
   handleCauseFom: (e: any) => void;
+  label?: string;
+  type?: "arrest" | "probable-cause";
 }) {
   const remoteMessages = useQuery(api.message.list, { sessionId });
   const messages = useMemo(
@@ -126,7 +130,9 @@ export function CauseFormIdSuggestion({
     console.log("handleSend");
     if (inputValue.includes("@suggestion")) {
       await sendMessage({
-        message: inputValue + data["probable-cause"],
+        message:
+          inputValue +
+          `${type === "arrest" ? data["attachments"] : data["probable-cause"]}`,
         sessionId,
       });
     } else if (inputValue.includes("@example")) {
@@ -190,11 +196,11 @@ export function CauseFormIdSuggestion({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button type="button">Probable Cause Analysis</Button>
+        <Button type="button">{label ?? "Probable Cause Analysis"}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] w-[90vw] h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Probable Cause Analysis</DialogTitle>
+          <DialogTitle>{label ?? "Probable Cause Analysis"}</DialogTitle>
           {/* <DialogDescription>
             This action cannot be undone. This will permanently delete your
             account and remove your data from our servers.

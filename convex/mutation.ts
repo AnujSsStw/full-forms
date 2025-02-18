@@ -150,3 +150,34 @@ export const deleteSignature = mutation({
     return await ctx.db.delete(args.id as Id<"signature">);
   },
 });
+
+export const createArrestDeclaration = mutation({
+  handler: async (ctx) => {
+    return await ctx.db.insert("arrestDeclaration", {
+      data: {},
+    });
+  },
+});
+
+export const updateArrestDeclaration = mutation({
+  args: {
+    id: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, { id, data }) => {
+    return await ctx.db.patch(id as Id<"arrestDeclaration">, {
+      data: {
+        ...data,
+      },
+    });
+  },
+});
+
+export const deleteArrestDeclaration = mutation({
+  args: {
+    id: v.string(),
+  },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.delete(id as Id<"arrestDeclaration">);
+  },
+});
