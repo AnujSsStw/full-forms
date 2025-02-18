@@ -435,7 +435,7 @@ export const ArrestWarrantForm = ({
               <ProbableCause
                 value={formData["attachments"]}
                 handleInputChange={handleChange}
-                label="Attachments"
+                label="Probable cause declaration"
               />
             </div>
 
@@ -452,7 +452,7 @@ export const ArrestWarrantForm = ({
                     },
                   })
                 }
-                label="Attachments Analysis"
+                // label="Attachments Analysis"
                 type="arrest"
               />
             </div>
