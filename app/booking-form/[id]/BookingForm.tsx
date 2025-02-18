@@ -267,7 +267,6 @@ export function BookingForm({
 
   const debouncedBooking = useDebouncedCallback(
     async (value, includeCharges) => {
-      console.log("updating booking", value);
       await updateBookingEntry({ id, data: value, includeCharges });
     },
     500

@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fillArrestDeclarationForm } from "./p";
 import { ProbableCause } from "../../cause-form/[id]/probable-cause";
 import { CauseFormIdSuggestion } from "../../cause-form/[id]/Suggestion";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useDebouncedCallback } from "use-debounce";
 
 const courtLocations = [
   { name: "BANNING", address: "311 E. Ramsey St., Banning, CA 92220" },
@@ -17,7 +20,7 @@ const courtLocations = [
   { name: "INDIO", address: "46-200 Oasis St., Indio, CA 92201" },
 ];
 
-export const initialArrestFormData = {
+const initialArrestFormData = {
   courtLocations: [] as string[],
   defendant: "",
   caseNumber: "",
@@ -54,28 +57,57 @@ export const ArrestWarrantForm = ({
   data: ArrestDeclarationFormData;
   id: string;
 }) => {
-  const [formData, setFormData] = useState(data);
+  const [formData, setFormData] = useState(initialArrestFormData);
+  const updateArrestEntry = useMutation(api.mutation.updateArrestDeclaration);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setFormData((p) => ({ ...p, ...data }));
+      setMounted(true);
+    }
+  }, [data]);
+
+  const debouncedArrest = useDebouncedCallback(async (value) => {
+    try {
+      await updateArrestEntry({ id, data: value });
+    } catch (error) {
+      console.log(value);
+      console.error("Error updating cause:", error);
+    }
+  }, 1000);
+
+  if (!mounted) return <p>Loading...</p>;
 
   const handleChange = (e: { target: { name: any; value: any } }) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+
+      debouncedArrest(newData);
+      return newData;
+    });
   };
 
   const handleLocationChange = (locationName: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      courtLocations: prev.courtLocations.includes(locationName)
-        ? prev.courtLocations.filter((loc) => loc !== locationName)
-        : [...prev.courtLocations, locationName],
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        courtLocations: prev.courtLocations.includes(locationName)
+          ? prev.courtLocations.filter((loc) => loc !== locationName)
+          : [...prev.courtLocations, locationName],
+      };
+
+      debouncedArrest(newData);
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     const pdfbytes = await fillArrestDeclarationForm(formData);
     if (!pdfbytes) return;
 

@@ -24,7 +24,7 @@ export default function IndexArrestDeclarationPage() {
   const filteredArrestDeclaration = getAllArrestDeclaration?.filter((entry) => {
     if (!searchTerm) return true;
     return (
-      entry.data["agency-case"]
+      entry.data["caseNumber"]
         .toLowerCase()
         .trim()
         .includes(searchTerm.toLowerCase()) ||
@@ -49,7 +49,7 @@ export default function IndexArrestDeclarationPage() {
               router.push(`/arrest-declaration/${id}`);
             }}
           >
-            Create Probable Cause
+            Create Arrest Declaration
           </Button>
         </div>
         <div className="space-y-2">
@@ -75,10 +75,12 @@ export default function IndexArrestDeclarationPage() {
                       )}
                     </div>
                     <h1 className="text-2xl">
-                      Agency case no.{" "}
-                      {entry.data["agency-case"] || "not yet set"}
+                      Case no. {entry.data["caseNumber"] || "not yet set"}
                     </h1>
-                    <p>Arrestee: {entry.data["arrestee"] || "not yet set"}</p>
+                    <p>
+                      Declarant Name:
+                      {entry.data["declarantName"] || "not yet set"}
+                    </p>
                   </div>
                   <Button
                     onClick={async () => {

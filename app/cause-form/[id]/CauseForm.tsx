@@ -151,7 +151,6 @@ export function RiversideCountySheriffForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("handleSubmit", formData);
 
     const sign = signatures?.find(
       (sign) => sign._id === formData["declarant-signature"]
