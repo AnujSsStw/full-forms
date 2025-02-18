@@ -17,7 +17,7 @@ const courtLocations = [
   { name: "INDIO", address: "46-200 Oasis St., Indio, CA 92201" },
 ];
 
-const initialFormData = {
+export const initialArrestFormData = {
   courtLocations: [] as string[],
   defendant: "",
   caseNumber: "",
@@ -45,7 +45,7 @@ const initialFormData = {
   judicialName: "",
 };
 
-export type ArrestDeclarationFormData = typeof initialFormData;
+export type ArrestDeclarationFormData = typeof initialArrestFormData;
 
 export const ArrestWarrantForm = ({
   data,

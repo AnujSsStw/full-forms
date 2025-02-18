@@ -14,18 +14,15 @@ export default function IndexArrestDeclarationPage() {
   const createArrestDeclaration = useMutation(
     api.mutation.createArrestDeclaration
   );
-  const getAllArrestDeclaration = useQuery(
-    api.query.getAllarrestDeclaration
-  );
+  const getAllArrestDeclaration = useQuery(api.query.getAllarrestDeclaration);
   const deleteArrestDeclaration = useMutation(
     api.mutation.deleteArrestDeclaration
   );
 
   const router = useRouter();
 
-  const filteredArrestDeclaration = getAllArrestDeclaration?.filter(
-    (entry) => {
-      if (!searchTerm) return true;
+  const filteredArrestDeclaration = getAllArrestDeclaration?.filter((entry) => {
+    if (!searchTerm) return true;
     return (
       entry.data["agency-case"]
         .toLowerCase()
@@ -41,7 +38,7 @@ export default function IndexArrestDeclarationPage() {
         <div className="flex justify-between items-center mb-4 gap-2">
           <Input
             type="search"
-            placeholder="Search entries by agency case no. or booking no."
+            placeholder="Search entries by case no. "
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className=""

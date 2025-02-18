@@ -154,7 +154,7 @@ export const deleteSignature = mutation({
 export const createArrestDeclaration = mutation({
   handler: async (ctx) => {
     return await ctx.db.insert("arrestDeclaration", {
-      data: {},
+      data: initialArrestFormData,
     });
   },
 });
@@ -181,3 +181,31 @@ export const deleteArrestDeclaration = mutation({
     return await ctx.db.delete(id as Id<"arrestDeclaration">);
   },
 });
+
+const initialArrestFormData = {
+  courtLocations: [] as string[],
+  defendant: "",
+  caseNumber: "",
+  declarantName: "",
+  title: "",
+  employedBy: "",
+  county: "",
+  reportedCrime: "",
+  declaration: "",
+  sex: "",
+  race: "",
+  dob: "",
+  eyes: "",
+  hair: "",
+  height: "",
+  weight: "",
+  cdl: "",
+  address: "",
+  date: "",
+  bail: "",
+  attachments: "",
+  printName: "",
+  judicialDecision: "",
+  judicialDate: "",
+  judicialName: "",
+};
