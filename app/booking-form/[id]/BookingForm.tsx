@@ -678,19 +678,54 @@ export function BookingForm({
                     name="dob"
                     value={formData.dob}
                     onChange={(e) => {
-                      // handleInputChange(e);
-                      // set the age
-                      const dob = new Date(e.target.value);
-                      const today = new Date();
-                      const age = today.getFullYear() - dob.getFullYear();
+                      const inputDate = e.target.value;
 
+                      // Validate input first
+                      if (!inputDate) {
+                        // Handle empty input
+                        setFormData((prevData) => ({
+                          ...prevData,
+                          dob: "",
+                          age: "",
+                        }));
+                        return;
+                      }
+
+                      const dob = new Date(inputDate);
+
+                      // Check if date is valid
+                      if (isNaN(dob.getTime())) {
+                        // Handle invalid date
+                        return;
+                      }
+
+                      const today = new Date();
+
+                      // Check if date is in the future
+                      if (dob > today) {
+                        // Handle future date
+                        return;
+                      }
+
+                      // Calculate age
+                      let age = today.getFullYear() - dob.getFullYear();
+                      const monthDifference = today.getMonth() - dob.getMonth();
+
+                      if (
+                        monthDifference < 0 ||
+                        (monthDifference === 0 &&
+                          today.getDate() < dob.getDate())
+                      ) {
+                        age--;
+                      }
+
+                      // Update form data
                       setFormData((prevData) => {
                         const newData = {
                           ...prevData,
-                          dob: e.target.value,
+                          dob: inputDate,
                           age: age.toString(),
                         };
-
                         debouncedBooking(newData, false);
                         return newData;
                       });
