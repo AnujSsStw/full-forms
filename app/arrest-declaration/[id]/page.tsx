@@ -1,6 +1,6 @@
-import { ArrestWarrantForm } from "./ArrestDeclaration";
+import { ArrestDeclarationFormData, ArrestWarrantForm } from "./ArrestDeclaration";
 
-export default async function BookingFormPage({
+export default async function ArrestDeclarationFormPage({
   params,
 }: {
   params: {
@@ -20,7 +20,10 @@ export default async function BookingFormPage({
 
   return (
     <main>
-      <ArrestWarrantForm id={params.id} data={d.data} />
+      <ArrestWarrantForm
+        id={params.id}
+        data={d as ArrestDeclarationFormData}
+      />
     </main>
   );
 }
