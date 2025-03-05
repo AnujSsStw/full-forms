@@ -8,18 +8,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { SignInButton, UserButton } from "@clerk/clerk-react";
+import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { Settings, Slash } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Navigation({}: {}) {
   const pathname = usePathname();
   const isbookingFormPath = pathname.includes("/booking-form");
   const isCauseFormPath = pathname.includes("/cause-form");
-  const isReportPath = pathname.includes("/report");
+  const isReportPath = pathname === "/report";
   const isHPath = pathname.includes("/h");
   const isArrestDeclarationPath = pathname.includes("/arrest-declaration");
+  const isAdminPath = pathname.includes("/admin");
+  const isReportsPath = pathname === "/reports";
 
   return (
     <nav className="sticky top-0 z-50 flex w-full flex-col border-b border-border bg-card px-6">
@@ -32,6 +38,14 @@ export function Navigation({}: {}) {
         </div>
 
         <div className="flex h-10 items-center gap-3">
+          <div className="flex items-center gap-3">
+            <Unauthenticated>
+              <SignInButton />
+            </Unauthenticated>
+            <Authenticated>
+              <UserButton />
+            </Authenticated>
+          </div>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 rounded-full">
@@ -156,6 +170,42 @@ export function Navigation({}: {}) {
             href={"/arrest-declaration"}
           >
             Arrest Declaration
+          </Link>
+        </div>
+        <div
+          className={cn(
+            `flex h-12 items-center border-b-2`,
+            isReportsPath ? "border-primary" : "border-transparent"
+          )}
+        >
+          <Link
+            className={cn(
+              `${buttonVariants({
+                variant: "ghost",
+                size: "sm",
+              })} text-primary/80`
+            )}
+            href={"/reports"}
+          >
+            Reports
+          </Link>
+        </div>
+        <div
+          className={cn(
+            `flex h-12 items-center border-b-2`,
+            isAdminPath ? "border-primary" : "border-transparent"
+          )}
+        >
+          <Link
+            className={cn(
+              `${buttonVariants({
+                variant: "ghost",
+                size: "sm",
+              })} text-primary/80`
+            )}
+            href={"/admin"}
+          >
+            Admin
           </Link>
         </div>
       </div>

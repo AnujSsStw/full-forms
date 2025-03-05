@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { createArrestDeclaration } from "./mutation";
 
+export const bookingStatus = v.union(
+  v.literal("pending"),
+  v.literal("approved"),
+  v.literal("needs_correction")
+);
+
 export default defineSchema({
   crimeElement: defineTable({
     pcId: v.id("pc"),
@@ -27,10 +33,13 @@ export default defineSchema({
     data: v.any(),
     charges: v.array(v.any()),
     causeId: v.optional(v.id("cause")),
+    userId: v.optional(v.id("user")),
+    status: v.optional(bookingStatus),
   }),
   cause: defineTable({
     data: v.any(),
     isFirstMsgId: v.optional(v.id("messages")),
+    userId: v.optional(v.id("user")),
   }),
   arrestDeclaration: defineTable({
     data: v.any(),
@@ -52,4 +61,22 @@ export default defineSchema({
     base64Sign: v.string(),
     userName: v.string(),
   }),
+
+  user: defineTable({
+    email: v.string(),
+    firstName: v.string(),
+    lastName: v.string(),
+    fullName: v.string(),
+    pictureUrl: v.string(),
+    phoneNumber: v.optional(v.string()),
+    tokenIdentifier: v.string(),
+
+    approved: v.optional(v.boolean()),
+  })
+    .index("by_email", ["email"])
+    .index("by_tokenIdentifier", ["tokenIdentifier"])
+    .searchIndex("search_hunter", {
+      searchField: "fullName",
+      filterFields: ["email"],
+    }),
 });

@@ -3,12 +3,20 @@ import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation } from "./_generated/server";
 import schema from "./schema";
-
+import { getCurrentUser } from "./users";
+import { bookingStatus } from "./schema";
 export const createBooking = mutation({
   handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     return await ctx.db.insert("booking", {
       data: {},
       charges: [],
+      userId: user._id,
+      status: "pending",
     });
   },
 });
@@ -62,6 +70,10 @@ export const createCauseWithBooking = mutation({
     if (!c) {
       throw new Error("Booking not found");
     }
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not found");
+    }
     if (c.causeId) {
       console.info("Cause already exists for booking", bookingId);
       ctx.runMutation(api.mutation.updateCause, {
@@ -73,6 +85,7 @@ export const createCauseWithBooking = mutation({
     const causeId = await ctx.db.insert("cause", {
       data: {
         ...data,
+        userId: user._id,
       },
     });
 
@@ -209,3 +222,15 @@ const initialArrestFormData = {
   judicialDate: "",
   judicialName: "",
 };
+
+export const updateBookingStatus = mutation({
+  args: {
+    id: v.string(),
+    status: bookingStatus,
+  },
+  handler: async (ctx, { id, status }) => {
+    return await ctx.db.patch(id as Id<"booking">, {
+      status,
+    });
+  },
+});

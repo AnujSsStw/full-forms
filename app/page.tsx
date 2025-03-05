@@ -1,3 +1,8 @@
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { FileText, Search, Clock } from "lucide-react";
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main>
@@ -6,21 +11,16 @@ export default function Home() {
   );
 }
 
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { FileText, Search, Clock } from "lucide-react";
-import Link from "next/link";
-
 function Hero() {
   return (
-    <div className="] py-4 text-white">
+    <div className=" py-4">
       <div className="container mx-auto px-4">
         <div className="grid gap-8 md:grid-cols-2">
           <div className="flex flex-col justify-center space-y-6">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
               Streamlined Police Report Management
             </h1>
-            <p className="text-xl text-white/90">
+            <p className="text-xl">
               Your go-to platform for drafting reports, probable cause
               statements, and booking sheets. Disclaimer: This tool is for
               informational purposes only and not for official use

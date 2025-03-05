@@ -46,6 +46,7 @@ import {
 } from "./p";
 import { VirtualizedCombobox } from "@/components/virtualized-combobox";
 import { PenalCode } from "@/lib/pc";
+import ExtractDocDetails from "@/components/ExtractDocDetails";
 
 const defaultFormState: BookingFormState = {
   arrest_time: "",
@@ -143,10 +144,8 @@ const formatHeight = (input: string) => {
     return digits.slice(0, -2) + "'" + digits.slice(-2) + '"';
   }
 };
-// RIVERSIDE, LARSON, SOUTHWEST, BANNING, BLYTHE
 const COURTS = ["RIVERSIDE", "LARSON", "SOUTHWEST", "BANNING", "BLYTHE"];
-// BANNING,BLYTHE,CABAZON,HEMET,JURUPA VALLEY ,LAKE ELSINORE,MORENO VALLEY,NORCO,PALM DESERT,PERRIS,SAN JACINTO,SOUTHWEST,THERMAL
-const ARRESTING_AGENCY = [
+export const ARRESTING_AGENCY = [
   "BANNING",
   "BLYTHE",
   "CABAZON",
@@ -480,28 +479,12 @@ export function BookingForm({
                     value={formData.arrest_time}
                   />
                 </div>
-                {/* <div className="space-y-2"> <Label htmlFor="booking_date">Booking Date</Label>
-                  <Input
-                    type="datetime-local"
-                    id="booking_date"
-                    name="booking_date"
-                    value={formData.booking_date}
-                    onChange={handleInputChange}
-                  />
-                </div> */}
-                {/* <div className="space-y-2">
-                  <Label htmlFor="booking_number">Booking Number</Label>
-                  <Input
-                    type="text"
-                    id="booking_number"
-                    name="booking_number"
-                    value={formData.booking_number}
-                    onChange={handleInputChange}
-                  />
-                </div> */}
               </div>
             </div>
 
+            <div className="space-y-2">
+              <ExtractDocDetails setFormData={setFormData} />
+            </div>
             {/* Personal Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Personal Information</h3>

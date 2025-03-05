@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalQuery, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 export const getAllBookings = query({
@@ -63,5 +63,64 @@ export const getArrestDeclaration = query({
   },
   handler: async (ctx, { id }) => {
     return await ctx.db.get(id as Id<"arrestDeclaration">);
+  },
+});
+
+export const getReportsForTimeRange = mutation({
+  args: {
+    start: v.string(),
+    end: v.string(),
+    agency: v.string(), // can be all or a specific agency
+  },
+  handler: async (ctx, { start, end, agency }) => {
+    const data =
+      agency === "all"
+        ? await ctx.db
+            .query("booking")
+            .filter((q) => q.gte(q.field("data.arrest_time"), start))
+            .filter((q) => q.lte(q.field("data.arrest_time"), end))
+            .collect()
+        : await ctx.db
+            .query("booking")
+            .filter((q) => q.gte(q.field("data.arrest_time"), start))
+            .filter((q) => q.lte(q.field("data.arrest_time"), end))
+            .filter((q) => q.eq(q.field("data.arrest_agency"), agency))
+            .collect();
+
+    const dataWithSummary = data.map((booking) => {
+      if (booking.causeId) {
+        return ctx.db.get(booking.causeId).then((cause) => ({
+          booking,
+          cause: cause?.data["probable-cause"] ?? "Not yet set",
+        }));
+      }
+      return Promise.resolve({
+        booking,
+        cause: "No cause",
+      });
+    });
+
+    return await Promise.all(dataWithSummary);
+  },
+});
+
+export const getBookingsWithUserNames = query({
+  handler: async (ctx) => {
+    const data = await ctx.db.query("booking").collect();
+    const dataWithUserNames = await Promise.all(
+      data.map((booking) => {
+        if (booking.userId) {
+          return ctx.db.get(booking.userId).then((user) => ({
+            booking,
+            user: user?.fullName,
+          }));
+        }
+        return Promise.resolve({
+          booking,
+          user: "Not yet set",
+        });
+      })
+    );
+    return dataWithUserNames;
   },
 });

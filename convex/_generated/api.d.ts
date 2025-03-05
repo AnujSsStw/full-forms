@@ -22,6 +22,7 @@ import type * as pc from "../pc.js";
 import type * as pcSeed from "../pcSeed.js";
 import type * as query from "../query.js";
 import type * as serve from "../serve.js";
+import type * as users from "../users.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   pcSeed: typeof pcSeed;
   query: typeof query;
   serve: typeof serve;
+  users: typeof users;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
