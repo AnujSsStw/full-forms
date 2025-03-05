@@ -43,11 +43,8 @@ export default function ExtractDocDetails({
 
       // Initialize the Document Analysis client
       const endpoint =
-        process.env.NEXT_PUBLIC_AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ??
-        "https://driving-licience.cognitiveservices.azure.com/";
-      const key =
-        process.env.NEXT_PUBLIC_AZURE_DOCUMENT_INTELLIGENCE_KEY ??
-        "FwdvimUkdjySIauCGru9zr65iO9GZSKCOYgpzTEvl1BesOPsQyfPJQQJ99BCACYeBjFXJ3w3AAALACOGx6RP"; //TODO: Move to .env
+        process.env.NEXT_PUBLIC_AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ?? "";
+      const key = process.env.NEXT_PUBLIC_AZURE_DOCUMENT_INTELLIGENCE_KEY ?? "";
 
       if (!endpoint || !key) {
         throw new Error(

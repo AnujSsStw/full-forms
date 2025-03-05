@@ -48,6 +48,13 @@ export const deleteBooking = mutation({
     id: v.string(),
   },
   handler: async (ctx, { id }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.approved !== true) {
+      throw new Error("User not approved");
+    }
     return await ctx.db.delete(id as Id<"booking">);
   },
 });
@@ -229,6 +236,13 @@ export const updateBookingStatus = mutation({
     status: bookingStatus,
   },
   handler: async (ctx, { id, status }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.approved !== true) {
+      throw new Error("User not approved");
+    }
     return await ctx.db.patch(id as Id<"booking">, {
       status,
     });
