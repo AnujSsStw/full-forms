@@ -43,43 +43,11 @@ import {
 import { ARRESTING_AGENCY } from "../booking-form/[id]/BookingForm";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { jsPDF } from "jspdf";
+import { applyPlugin } from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
-// Sample data for demonstration
-const SAMPLE_DATA = [
-  {
-    date: "02/19/2025",
-    time: "14:35",
-    fileNumber: "PE240012345",
-    location: "73000 Fred Waring Dr, Palm Desert",
-    crimeType: "Domestic Violence",
-    arrestMade: "Yes",
-    suspectName: "Doe, John",
-    summary:
-      "Deputies responded to a disturbance at 73000 Fred Waring Dr. Upon arrival, they contacted John Doe (DOB: 01/01/1990), who was arrested for PC 243(e)(1) – Domestic Battery. Doe was booked at the Indio Jail.",
-  },
-  {
-    date: "02/19/2025",
-    time: "09:10",
-    fileNumber: "PE240012346",
-    location: "123 Main St, La Quinta",
-    crimeType: "Burglary",
-    arrestMade: "No",
-    suspectName: "N/A",
-    summary:
-      "Deputies responded to a burglary report at a residence. Unknown suspect(s) forced entry through rear sliding door and stole various electronics and jewelry. Investigation ongoing.",
-  },
-  {
-    date: "02/20/2025",
-    time: "22:15",
-    fileNumber: "PE240012347",
-    location: "45600 Portola Ave, Palm Desert",
-    crimeType: "Narcotics",
-    arrestMade: "Yes",
-    suspectName: "Smith, Jane",
-    summary:
-      "During a traffic stop, deputies located narcotics in the vehicle. Driver Jane Smith (DOB: 05/15/1985) was arrested for H&S 11350 – Possession of Controlled Substance. Smith was cited and released.",
-  },
-];
+applyPlugin(jsPDF);
 
 interface ReportData {
   date: string;
@@ -133,6 +101,121 @@ export default function ReportsPage() {
     );
     setReportGenerated(true);
     setLoading(false);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // Add title
+    doc.setFontSize(16);
+    doc.text("Incident Report", 14, 15);
+
+    // Add date range and agency
+    doc.setFontSize(12);
+    const dateRange = `${format(startDate || new Date(), "MM/dd/yyyy")} - ${format(endDate || new Date(), "MM/dd/yyyy")}`;
+    const agencyText =
+      agency === "all"
+        ? "All Agencies"
+        : agency.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase());
+    doc.text(`${dateRange} | ${agencyText}`, 14, 25);
+
+    // Prepare table data
+    const tableData = reportData.map((incident) => [
+      incident.date,
+      incident.time,
+      incident.fileNumber,
+      incident.location,
+      incident.crimeType,
+      incident.arrestMade,
+      incident.suspectName,
+      incident.summary,
+    ]);
+
+    // Add table with adjusted settings
+    (doc as any).autoTable({
+      head: [
+        [
+          "Date",
+          "Time",
+          "File Number",
+          "Location",
+          "Crime Type",
+          "Arrest Made",
+          "Suspect Name",
+          "Summary",
+        ],
+      ],
+      body: tableData,
+      startY: 35,
+      theme: "grid",
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: "linebreak",
+        cellWidth: "wrap",
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        minCellHeight: 10,
+      },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 45 },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 15 },
+        6: { cellWidth: 30 },
+        7: { cellWidth: 85 },
+      },
+    });
+
+    // Save the PDF
+    doc.save(`incident-report-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    // Prepare data for Excel
+    const excelData = reportData.map((incident) => ({
+      Date: incident.date,
+      Time: incident.time,
+      "File Number": incident.fileNumber,
+      Location: incident.location,
+      "Crime Type": incident.crimeType,
+      "Arrest Made": incident.arrestMade,
+      "Suspect Name": incident.suspectName,
+      Summary: incident.summary,
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 10 }, // Date
+      { wch: 8 }, // Time
+      { wch: 15 }, // File Number
+      { wch: 30 }, // Location
+      { wch: 20 }, // Crime Type
+      { wch: 12 }, // Arrest Made
+      { wch: 20 }, // Suspect Name
+      { wch: 50 }, // Summary
+    ];
+    ws["!cols"] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Incident Report");
+
+    // Save the Excel file
+    XLSX.writeFile(
+      wb,
+      `incident-report-${format(new Date(), "yyyy-MM-dd")}.xlsx`
+    );
   };
 
   return (
@@ -252,6 +335,7 @@ export default function ReportsPage() {
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-1"
+                  onClick={exportToPDF}
                 >
                   <FilePdf className="h-4 w-4" />
                   <span>PDF</span>
@@ -260,6 +344,7 @@ export default function ReportsPage() {
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-1"
+                  onClick={exportToExcel}
                 >
                   <FileSpreadsheet className="h-4 w-4" />
                   <span>Excel</span>
