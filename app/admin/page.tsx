@@ -98,9 +98,10 @@ export default function AdminPage() {
   const flattenedData =
     data?.map((booking) => ({
       id: booking.booking._id,
-      date: new Date(booking.booking._creationTime).toLocaleDateString(),
-      fileNumber: booking.booking.data.agency_case_number,
-      location: booking.booking.data.arrest_location,
+      date:
+        new Date(booking.booking._creationTime).toLocaleDateString() || "N/A",
+      fileNumber: booking.booking.data.agency_case_number || "N/A",
+      location: booking.booking.data.arrest_location || "N/A",
       crimeType: booking.booking.charges[0]?.narrative || "N/A",
       submittedBy: booking.user || "N/A",
       status:
