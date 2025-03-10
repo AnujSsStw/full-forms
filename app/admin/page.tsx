@@ -94,6 +94,20 @@ export default function AdminPage() {
   const data = useQuery(api.query.getBookingsWithUserNames);
   const updateStatus = useMutation(api.mutation.updateBookingStatus);
   const deleteBooking = useMutation(api.mutation.deleteBooking);
+  const user = useQuery(api.users.current);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Unauthorized Access</h1>
+          <p className="text-muted-foreground">
+            You do not have permission to access this page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const flattenedData =
     data?.map((booking) => ({
@@ -235,6 +249,7 @@ export default function AdminPage() {
                               size="icon"
                               title="Edit"
                               onClick={() => handleEditClick(incident)}
+                              disabled={user.approved !== true}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -243,6 +258,7 @@ export default function AdminPage() {
                               size="icon"
                               title="Delete"
                               onClick={() => handleDeleteClick(incident)}
+                              disabled={user.approved !== true}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
