@@ -674,32 +674,23 @@ export function BookingForm({
                         return;
                       }
 
-                      const dob = new Date(inputDate);
-
-                      // Check if date is valid
-                      if (isNaN(dob.getTime())) {
-                        // Handle invalid date
-                        return;
-                      }
-
+                      const birthDate = new Date(inputDate);
                       const today = new Date();
 
-                      // Check if date is in the future
-                      if (dob > today) {
-                        // Handle future date
-                        return;
-                      }
+                      let calculatedAge =
+                        today.getFullYear() - birthDate.getFullYear();
 
-                      // Calculate age
-                      let age = today.getFullYear() - dob.getFullYear();
-                      const monthDifference = today.getMonth() - dob.getMonth();
+                      // Check if birthday hasn't occurred yet this year
+                      const currentMonth = today.getMonth();
+                      const birthMonth = birthDate.getMonth();
+                      const currentDay = today.getDate();
+                      const birthDay = birthDate.getDate();
 
                       if (
-                        monthDifference < 0 ||
-                        (monthDifference === 0 &&
-                          today.getDate() < dob.getDate())
+                        birthMonth > currentMonth ||
+                        (birthMonth === currentMonth && birthDay > currentDay)
                       ) {
-                        age--;
+                        calculatedAge--;
                       }
 
                       // Update form data
@@ -707,7 +698,7 @@ export function BookingForm({
                         const newData = {
                           ...prevData,
                           dob: inputDate,
-                          age: age.toString(),
+                          age: calculatedAge.toString(),
                         };
                         debouncedBooking(newData, false);
                         return newData;
