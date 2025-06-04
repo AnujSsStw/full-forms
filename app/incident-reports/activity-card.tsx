@@ -20,6 +20,13 @@ import { PenalCode } from "@/lib/pc";
 import { cn } from "@/lib/utils";
 import { SirEntryFormValues } from "./sir-entry-form";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ActivityCardProps {
   index: number;
@@ -127,10 +134,22 @@ export function ActivityCard({ index, onDelete }: ActivityCardProps) {
             <div className="flex items-center space-x-2">
               <Label>City</Label>
             </div>
-            <Input
-              id={`${activityPath}.city`}
-              {...register(`activities.${index}.city`)}
-            />
+            <Select
+              onValueChange={(value) =>
+                setValue(`activities.${index}.city`, value)
+              }
+              defaultValue={watch(`activities.${index}.city`) || undefined}
+            >
+              <SelectTrigger id={`${activityPath}.city`}>
+                <SelectValue placeholder="Select a city" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Indian Wells">Indian Wells</SelectItem>
+                <SelectItem value="Palm Desert">Palm Desert</SelectItem>
+                <SelectItem value="Rancho Mirage">Rancho Mirage</SelectItem>
+                <SelectItem value="County">County</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2 md:col-span-2">
