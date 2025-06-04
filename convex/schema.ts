@@ -8,6 +8,24 @@ export const bookingStatus = v.union(
   v.literal("needs_correction")
 );
 
+export const sirActivity = v.array(
+  v.object({
+    event_time: v.string(),
+    penal_code: v.object({
+      codeType: v.string(),
+      code_number: v.string(),
+      m_f: v.string(),
+      narrative: v.string(),
+    }),
+    city: v.optional(v.string()),
+    location: v.string(),
+    subject_info: v.string(),
+    narrative: v.string(),
+    file_number: v.optional(v.string()),
+    incident_type: v.optional(v.string()),
+  })
+);
+
 export default defineSchema({
   crimeElement: defineTable({
     pcId: v.id("pc"),
@@ -79,4 +97,10 @@ export default defineSchema({
       searchField: "fullName",
       filterFields: ["email"],
     }),
+
+  sir: defineTable({
+    date: v.string(),
+    activities: sirActivity,
+    userId: v.optional(v.id("user")),
+  }),
 });

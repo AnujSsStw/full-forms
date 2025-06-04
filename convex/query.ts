@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
-
+import { startOfWeek, endOfWeek } from "date-fns";
 export const getAllBookings = query({
   handler: async (ctx) => {
     return await ctx.db.query("booking").collect();
@@ -122,5 +122,41 @@ export const getBookingsWithUserNames = query({
       })
     );
     return dataWithUserNames;
+  },
+});
+
+export const getSirReportsForTimeRange = mutation({
+  args: {
+    frequency: v.string(),
+    date: v.string(),
+  },
+  handler: async (ctx, { frequency, date }) => {
+    let start: Date;
+    let end: Date;
+
+    switch (frequency) {
+      case "weekly":
+        start = startOfWeek(new Date(date), { weekStartsOn: 1 }); // Monday
+        end = endOfWeek(new Date(date), { weekStartsOn: 1 }); // Sunday
+        break;
+      case "monthly":
+        start = new Date(date);
+        end = new Date(start.getFullYear(), start.getMonth() + 1, 0); // Last day of month
+        break;
+      case "yearly":
+        start = new Date(date);
+        end = new Date(start.getFullYear(), 11, 31); // December 31st
+        break;
+      default:
+        throw new Error(
+          "Invalid frequency. Must be 'weekly', 'monthly', or 'yearly'"
+        );
+    }
+
+    return await ctx.db
+      .query("sir")
+      .filter((q) => q.gte(q.field("date"), start.toISOString()))
+      .filter((q) => q.lte(q.field("date"), end.toISOString()))
+      .collect();
   },
 });

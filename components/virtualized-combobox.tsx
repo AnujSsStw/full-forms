@@ -143,9 +143,9 @@ const VirtualizedCommand = ({
               position: "relative",
             }}
           >
-            {virtualOptions.map((virtualOption) => (
+            {virtualOptions.map((virtualOption, idx) => (
               <CommandItem
-                key={filteredOptions[virtualOption.index].value}
+                key={idx}
                 disabled={isKeyboardNavActive}
                 className={cn(
                   "absolute left-0 top-0 w-full bg-transparent",
@@ -191,6 +191,7 @@ interface VirtualizedComboboxProps {
   width?: string;
   height?: string;
   onSelect?: (value: (typeof PenalCode)[0]) => void;
+  selectedOptionWidth?: string;
 }
 
 export function VirtualizedCombobox({
@@ -198,6 +199,7 @@ export function VirtualizedCombobox({
   searchPlaceholder = "Search items...",
   width = "800px",
   height = "400px",
+  selectedOptionWidth,
   onSelect,
 }: VirtualizedComboboxProps) {
   const [open, setOpen] = React.useState(false);
@@ -206,7 +208,7 @@ export function VirtualizedCombobox({
   >(undefined);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} >
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -226,8 +228,12 @@ export function VirtualizedCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0" style={{ width: width }}>
+      <PopoverContent
+        className="p-0"
+        style={{ width: selectedOptionWidth ?? width }}
+      >
         <VirtualizedCommand
+          key={selectedOption?.toString()}
           height={height}
           options={options.map((option) => ({
             value: option.code_number.toString(),

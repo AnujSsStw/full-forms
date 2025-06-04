@@ -4,7 +4,7 @@ import { Id } from "./_generated/dataModel";
 import { internalMutation, mutation } from "./_generated/server";
 import schema from "./schema";
 import { getCurrentUser } from "./users";
-import { bookingStatus } from "./schema";
+import { bookingStatus, sirActivity } from "./schema";
 export const createBooking = mutation({
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
@@ -245,6 +245,27 @@ export const updateBookingStatus = mutation({
     }
     return await ctx.db.patch(id as Id<"booking">, {
       status,
+    });
+  },
+});
+
+export const createSirEntry = mutation({
+  args: {
+    date: v.string(),
+    activities: sirActivity,
+  },
+  handler: async (ctx, { date, activities }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.approved !== true) {
+      throw new Error("User not approved");
+    }
+    return await ctx.db.insert("sir", {
+      date,
+      activities,
+      userId: user._id,
     });
   },
 });

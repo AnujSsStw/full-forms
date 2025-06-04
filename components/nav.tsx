@@ -26,6 +26,7 @@ export function Navigation({}: {}) {
   const isArrestDeclarationPath = pathname.includes("/arrest-declaration");
   const isAdminPath = pathname.includes("/admin");
   const isReportsPath = pathname === "/reports";
+  const isIncidentReportsPath = pathname === "/incident-reports";
 
   return (
     <nav className="sticky top-0 z-50 flex w-full flex-col border-b border-border bg-card px-6">
@@ -206,6 +207,24 @@ export function Navigation({}: {}) {
             href={"/admin"}
           >
             Admin
+          </Link>
+        </div>
+        <div
+          className={cn(
+            `flex h-12 items-center border-b-2`,
+            isIncidentReportsPath ? "border-primary" : "border-transparent"
+          )}
+        >
+          <Link
+            className={cn(
+              `${buttonVariants({
+                variant: "ghost",
+                size: "sm",
+              })} text-primary/80`
+            )}
+            href={"/incident-reports"}
+          >
+            Incident Reports
           </Link>
         </div>
       </div>
